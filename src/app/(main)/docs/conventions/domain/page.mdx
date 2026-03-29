@@ -1,0 +1,245 @@
+# Domain Layer
+
+Trái tim của ứng dụng. Logic nghiệp vụ phải thuần khiết, không phụ thuộc UI, API hay thư viện nào khác.
+
+---
+
+## 1. Cấu trúc
+
+Mỗi tính năng sẽ nằm trong `src/domain/todo/`:
+
+| Thư mục             | Trách nhiệm                                 |
+| ------------------- | ------------------------------------------- |
+| **model/**          | Định nghĩa **Entity** (vd: `ITodo`)         |
+| **infrastructure/** | Repository hiện thực (vd: `TodoRepository`) |
+| **use-cases/**      | Chứa các hành động xử lý nghiệp vụ đơn lẻ   |
+
+---
+
+## 2. Quy trình vận hành
+
+Dự án dùng mô hình **Adapter-Centric**: Hook (Adapter) điều phối hoạt động giữa UI, Store và Use Case.
+
+### 4.1 Luồng Truy vấn (Query Flow)
+
+- **UI**: Gọi `fetchTodos()` từ Hook.
+- **Hook (Adapter)**: Bật trạng thái loading và gọi `FindAllTodosUseCase.execute()`.
+- **UseCase**: Điều phối logic và gọi `Repository.findAll()`.
+- **Repository**: Fetch data từ API/DB -> Dùng **Mapper** chuyển DTO thành **Domain Entity**.
+- **Result**: Data được trả lại cho Hook để cập nhật Store và re-render UI.
+
+<FlowViewer
+  title="Luồng Truy vấn (Query Flow)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🖼️ UI Component' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '🪝 Hook (Adapter)' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '⚡ UseCase' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '🏢 Repository' } },
+    {
+      id: '5',
+      type: 'custom',
+      position: { x: 1250, y: 150 },
+      data: { label: '🗄️ Database / API' },
+    },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) Action',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-top',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(2) execute()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-top',
+      target: '4',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(3) findAll()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '4',
+      sourceHandle: 'source-top',
+      target: '5',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(4) Call API/DB',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e5',
+      source: '5',
+      sourceHandle: 'source-bottom',
+      target: '4',
+      targetHandle: 'target-bottom',
+      label: '(5) DTO response',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e6',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-bottom',
+      label: '(6) Entity (Mapper)',
+      style: { stroke: '#34d399' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e7',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(7) Return result',
+      style: { stroke: '#10b981' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e8',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      animated: true,
+      label: '(8) Sync Store & UI',
+      style: { stroke: '#3b82f6' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+### 4.2 Luồng Hành động (Command Flow)
+
+_Sử dụng khi thay đổi dữ liệu (Create/Update/Delete)._
+
+- **Optimistic**: Hook có thể cập nhật Store ngay lập tức để tạo cảm giác "siêu tốc".
+- **UseCase**: Đảm bảo các quy tắc nghiệp vụ (vd: k cho xóa nếu chưa hoàn thành).
+- **Repository**: Thực thi tầng hạ tầng và mapping kết quả trả về.
+
+<FlowViewer
+  title="Luồng Hành động (Command Flow)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🖱️ User Click' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '🪝 Hook (Adapter)' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '⚡ UseCase' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '🏢 Repository' } },
+    { id: '5', type: 'custom', position: { x: 1250, y: 150 }, data: { label: '🗄️ API / DB' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) Action',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      label: '(2) Optimistic Update',
+      style: { stroke: '#f59e0b' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '2',
+      sourceHandle: 'source-top',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(3) execute()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '3',
+      sourceHandle: 'source-top',
+      target: '4',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(4) update()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e5',
+      source: '4',
+      sourceHandle: 'source-top',
+      target: '5',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(5) Persist',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e6',
+      source: '5',
+      sourceHandle: 'source-bottom',
+      target: '4',
+      targetHandle: 'target-bottom',
+      label: '(6) Success Code',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e7',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-bottom',
+      label: '(7) Map Entity',
+      style: { stroke: '#34d399' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e8',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(8) Final Result',
+      style: { stroke: '#10b981' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e9',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      animated: true,
+      label: '(9) Rollback/Sync',
+      style: { stroke: '#f472b6' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+> [!IMPORTANT]
+> **Quy tắc tuyệt đối**: Domain Layer tuyệt đối không được import bất kỳ cái gì từ UI (React, Styled Components, etc.) hoặc Store (Zustand). Domain phải tồn tại độc lập.

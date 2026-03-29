@@ -1,0 +1,93 @@
+# Infrastructure Layer
+
+Nơi cầu nối giữa app và thế giới bên ngoài: **Database**, **API**, **LocalStorage**.
+
+---
+
+## 1. Repository Pattern
+
+- Triển khai các Interface từ Domain Layer.
+- **Mocking**: Giúp unit test dễ dàng (đổi từ gọi API sang gọi Mock data).
+
+---
+
+## 2. Mapper & DTO
+
+- **DTO**: Định dạng dữ liệu từ API/DB (vd: `todo_id` — snake_case).
+- **Domain Model**: Định dạng dữ liệu UI muốn dùng (vd: `todoId` — camelCase).
+- **Mapper**: Chuyển đổi giữa 2 thằng trên.
+
+```typescript
+// todo.mapper.ts
+export class TodoMapper {
+  static toDomain(dto: TodoDTO): ITodo {
+    return {
+      id: dto.todo_id,
+      title: dto.title,
+    };
+  }
+}
+```
+
+---
+
+<FlowViewer
+  title="Infrastructure Mapping Flow"
+  height={300}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 75 }, data: { label: '⚡ UseCase' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 75 }, data: { label: '🏢 Repository' } },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 650, y: 75 },
+      data: { label: '🔄 Mapper (DTO -> Entity)' },
+    },
+    { id: '4', type: 'custom', position: { x: 950, y: 75 }, data: { label: '🗄️ Database / API' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      target: '2',
+      animated: true,
+      label: '(1) call repo',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      target: '4',
+      animated: true,
+      label: '(2) raw query',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-bottom',
+      label: '(3) DTO Result',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '3',
+      sourceHandle: 'source-left',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(4) Domain Entity',
+      style: { stroke: '#34d399' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## 3. Quy tắc
+
+- **Không** chứa logic nghiệp vụ (vd: check completed đã xóa được chưa).
+- Mọi logic check business đó **bắt buộc** phải chuyển lên **UseCase**.
+- Repository chỉ làm nhiệm vụ: **Lấy / Lưu dữ liệu**.

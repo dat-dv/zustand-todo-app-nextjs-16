@@ -1,0 +1,32 @@
+# Tối ưu Performance
+
+App Todo thì thường ít lag, nhưng mình làm architecture "chuẩn" thì phải chạy cực nhanh và mượt.
+
+---
+
+## 1. Zustand `useShallow`
+
+- **Tại sao?**: Khi chỉ lấy 2 field từ store (vd: `todos`, `loading`), mình không muốn re-render khi `pageSize` thay đổi.
+- **Dùng thế nào?**: Luôn bọc `useShallow` khi lấy nhiều field cùng lúc.
+
+---
+
+## 2. React `memo` & Virtualization
+
+- **`React.memo`**: Bọc `TodoItem` để khi list thay đổi (vd: thêm task mới), các task cũ không bị render lại vô ích.
+- **`virtua`**: Khi list có hàng ngàn items, chỉ render những thằng nào đang hiện trên màn hình (ViewPort). Giúp DOM cực nhẹ, không bao giờ bị đứng hình khi scroll.
+
+---
+
+## 3. SEO & SSR Hydration
+
+- ** Hydration**: Truyền data từ Server xuống ngay lập tức (Zero Flicker).
+- **Static vs Dynamic**: Tận dụng `force-static` cho các trang tài liệu (Docs) để load nhanh như chớp.
+
+---
+
+## 4. Tóm lại Quy tắc "Vàng"
+
+- Không fetch data trong `useEffect` lúc load trang.
+- Đã dùng Zustand thì phải bọc `useShallow`.
+- Dùng `React.memo` cho mọi item trong danh sách (List Item).

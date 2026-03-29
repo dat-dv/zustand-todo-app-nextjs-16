@@ -1,0 +1,633 @@
+# Kiến Trúc & Quy Ước Dự Án — Full-Stack Next.js
+
+> Dự án áp dụng **Clean Architecture** (Robert C. Martin) kết hợp **Domain-Centric design** và **Atomic Design** cho UI.
+> Mục tiêu cốt lõi: **Business logic không phụ thuộc vào framework, database, hay UI.**
+
+## 1. Triết lý — Clean Architecture
+
+> **Clean Architecture áp dụng cho CẢ HAI phía: Frontend (FE) và Backend (BE).**
+> Mỗi phía đều có 4 vòng layer riêng biệt. **Tầng Entities là tầng DUY NHẤT được chia sẻ.**
+
+```text
+╔══════════════════════════════════╗     ╔══════════════════════════════════╗
+║         FRONTEND (Browser)       ║     ║         BACKEND (Server)         ║
+║                                  ║     ║                                  ║
+║  🟡 Frameworks & Drivers         ║     ║  🟡 Frameworks & Drivers         ║
+║     React, Zustand, Next.js      ║     ║     Next.js, Drizzle, SQLite     ║
+║  ┌────────────────────────────┐  ║     ║  ┌────────────────────────────┐  ║
+║  │ 🟢 Interface Adapters      │  ║     ║  │ 🟢 Interface Adapters      │  ║
+║  │   Repository (HTTP client) │  ║     ║  │   Route Handler            │  ║
+║  │   Mapper (DTO→Domain)      │  ║     ║  │   ORM Layer (Drizzle)      │  ║
+║  │ ┌────────────────────────┐ │  ║     ║  │ ┌────────────────────────┐ │  ║
+║  │ │ 🔵 Use Cases           │ │  ║     ║  │ │ 🔵 Use Cases           │ │  ║
+║  │ │   Store Handler        │ │  ║     ║  │ │   Service (Server)     │ │  ║
+║  │ │   Service (Client)     │ │  ║     ║  │ │   Auth Guard           │ │  ║
+║  │ │ ┌────────────────────┐ │ │  ║     ║  │ │ ┌────────────────────┐ │ │  ║
+║  │ │ │ ⚪ Entities        │ │ │  ║     ║  │ │ │ ⚪ Entities        │ │ │  ║
+║  │ │ │  ITodo, IUser      │◄├─╫─────────╫─►│ │  ITodoDTO, IUserResponse│ │ │  ║
+║  │ │ │  IRepository       │ │ │  ║SHARED║  │ │ │  (same types.ts)  │ │ │  ║
+║  │ │ └────────────────────┘ │ │  ║     ║  │ │ └────────────────────┘ │ │  ║
+║  │ └────────────────────────┘ │  ║     ║  │ └────────────────────────┘ │  ║
+║  └────────────────────────────┘  ║     ║  └────────────────────────────┘  ║
+╚══════════════════════════════════╝     ╚══════════════════════════════════╝
+              │                                          ▲
+              │         HTTP (JSON — DTO only)           │
+              └──────────────────────────────────────────┘
+```
+
+**Quy tắc phụ thuộc:** Mũi tên chỉ hướng vào trong.
+Layer bên trong **không bao giờ** biết layer bên ngoài tồn tại.
+
+### Mỗi layer thuộc về FE hay BE?
+
+| Circle                | Layer                      | 🌐 Frontend                     | ⚙️ Backend                     |
+| --------------------- | -------------------------- | ------------------------------- | ------------------------------ |
+| ⚪ Entities           | Domain Models + Interfaces | `ITodo`, `IUser`, `IRepository` | `ITodoDTO`, `IUserResponse`    |
+| 🔵 Use Cases          | Business Logic             | `StoreHandler`, `ServiceClient` | `ServiceApi`, `AuthGuard`      |
+| 🟢 Interface Adapters | Kết nối layers             | `Repository`, `Mapper`          | `Route Handler`, `Drizzle ORM` |
+| 🟡 Frameworks         | Công cụ & Framework        | `React`, `Zustand`, `Next.js`   | `Next.js`, `Drizzle`, `SQLite` |
+
+---
+
+## 2. Cấu Trúc Thư Mục (Domain-Centric)
+
+Toàn bộ logic nghiệp vụ được tổ chức theo module trong thư mục `src/domains/`.
+
+```text
+src/
+├── app/                                # Next.js App Router
+│   ├── (main)/docs/                   # Trang tài liệu này
+│   └── api/
+│       └── [module]/
+│           ├── route.ts               # Route Handler (Framework)
+│           └── [module].service.ts    # Server-only business logic (Use Case)
+│
+├── domains/                           # ⚪&🔵 CORE — Entities & Use Cases
+│   └── [module]/
+│       ├── [module].types.ts          # DTO + Domain Model + Interfaces
+│       ├── [module].mapper.ts         # Mapper (Interface Adapter)
+│       ├── [module].service.ts        # Client-side Service (Use Case)
+│       ├── [module].repository.ts     # HTTP Implementation (Adapter)
+│       └── [module].repository.mock.ts # Mock data (Adapter)
+│
+├── store/                             # 🟢 Interface Adapters — State
+│   └── [module]-store/
+│       ├── [module]-store.handler.ts  # Logic thay đổi state (Use Case)
+│       └── [module]-store.types.ts    # Định nghĩa State
+│
+├── hooks/                             # 🟢 Interface Adapters — Hooks
+│   └── [module]/
+│       └── use-[module]-ssr.ts        # Zustand Context Bridge
+│
+├── components/                        # 🟡 Frameworks — UI (Atomic Design)
+│   ├── atoms/                         # Button, Input, Badge
+│   ├── molecules/                     # Form, Card, Providers
+│   └── organisms/                     # Feature blocks: TodoView
+│
+├── db/                                # 🟡 Frameworks — Database
+└── utils/                             # Shared utilities
+```
+
+### Phân loại theo Clean Architecture circle
+
+```text
+domains/[m]/[m].types.ts          ← ⚪ Entities
+domains/[m]/[m].service.ts        ← 🔵 Use Cases
+app/api/[m]/[m].service.ts        ← 🔵 Use Cases
+store/[m]-store/[m]-store.handler ← 🔵 Use Cases
+domains/[m]/[m].mapper.ts         ← 🟢 Interface Adapters
+domains/[m]/[m].repository.ts     ← 🟢 Interface Adapters
+app/api/[m]/route.ts              ← 🟢 Interface Adapters
+components/                       ← 🟡 Frameworks & Drivers
+app/ (Next.js routing)            ← 🟡 Frameworks & Drivers
+db/ (Drizzle + SQLite)            ← 🟡 Frameworks & Drivers
+```
+
+---
+
+## 3. Dòng chảy dữ liệu (Interactive Command Flow)
+
+Đây là luồng "Command Flow" hoàn chỉnh nhất, bao gồm cả Optimistic Update và Mapping, được thể hiện qua công cụ **FlowViewer**.
+
+<FlowViewer
+  title="Kiến Trúc Dữ Liệu (Interactive Command Flow)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🖱️ UI (View)' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '🪝 Hook (Adapter)' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '⚡ UseCase' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '🏢 Repository' } },
+    { id: '5', type: 'custom', position: { x: 1250, y: 150 }, data: { label: '🗄️ API / DB' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) Action',
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      label: '(2) Optimistic Update',
+      style: { stroke: '#f59e0b' },
+    },
+    {
+      id: 'e3',
+      source: '2',
+      sourceHandle: 'source-top',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(3) execute()',
+    },
+    {
+      id: 'e4',
+      source: '3',
+      sourceHandle: 'source-top',
+      target: '4',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(4) update()',
+    },
+    {
+      id: 'e5',
+      source: '4',
+      sourceHandle: 'source-top',
+      target: '5',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(5) Persist',
+    },
+    {
+      id: 'e6',
+      source: '5',
+      sourceHandle: 'source-bottom',
+      target: '4',
+      targetHandle: 'target-bottom',
+      label: '(6) Success Code',
+    },
+    {
+      id: 'e7',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-bottom',
+      label: '(7) Map Entity',
+      style: { stroke: '#34d399' },
+    },
+    {
+      id: 'e8',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(8) Final Result',
+      style: { stroke: '#10b981' },
+    },
+    {
+      id: 'e9',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      animated: true,
+      label: '(9) Rollback/Sync',
+      style: { stroke: '#f472b6' },
+    },
+  ]}
+/>
+
+---
+
+## 4. Luồng Frontend (Client Side)
+
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                        FRONTEND FLOW                                │
+│                                                                     │
+│  ┌──────────────┐                                                   │
+│  │ Atomic Design │                                                  │
+│  │  atoms        │                                                  │
+│  │  molecules    │ → View Layer (React Components)                  │
+│  │  organisms    │                                                  │
+│  └──────┬───────┘                                                   │
+│         │  Gọi selector / dispatch action                           │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Custom Hook  (use[Module]SSR)               │                  │
+│  │  Zustand Context Bridge                      │                  │
+│  │  Tách biệt Store khỏi Component             │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │  Đọc/ghi state                                            │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Store Handler  (Zustand)                    │  ← Use Case      │
+│  │  - Quản lý global state                      │                  │
+│  │  - Orchestrate optimistic update             │                  │
+│  │  - Rollback khi lỗi                          │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │  Gọi method qua interface IRepository                     │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Service (Client)  [module].service.ts       │  ← Use Case      │
+│  │  - Thin adapter bọc Repository              │                  │
+│  │  - Có thể chứa validation, transform         │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │  Gọi HTTP hoặc mock                                       │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Repository  [module].repository.ts          │  ← Interface     │
+│  │  - Gọi fetch/axios tới /api/[module]         │    Adapter       │
+│  │  - Gọi Mapper.toDomain() với kết quả nhận   │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Mapper  [module].mapper.ts                  │  ← Interface     │
+│  │  toDomain(DTO) → Domain Model                │    Adapter       │
+│  │  toServer(Domain) → DTO                      │                  │
+│  └──────────────────────────────────────────────┘                  │
+└────────────────────────────┬────────────────────────────────────────┘
+```
+
+### Ghi chú quan trọng
+
+<FlowViewer
+  title="Provider & Dependency Injection Flow"
+  height={300}
+  initialNodes={[
+    {
+      id: '1',
+      type: 'custom',
+      position: { x: 50, y: 150 },
+      data: { label: '📦 [Module]Provider' },
+    },
+    { id: '2', type: 'custom', position: { x: 400, y: 50 }, data: { label: '🗄️ Zustand Store' } },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 400, y: 250 },
+      data: { label: '🏢 Repository Impl' },
+    },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'createStore + inject', animated: true },
+    { id: 'e2', source: '1', target: '3', label: 'chọn implementation (Mock/Real)' },
+  ]}
+/>
+
+---
+
+## 5. Luồng Backend (Server Side)
+
+```text
+                       HTTP Request từ Browser
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         BACKEND FLOW                                │
+│                                                                     │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Route Handler  app/api/[module]/route.ts    │  ← Framework     │
+│  │  - Entry point duy nhất                      │    Driver        │
+│  │  - Parse request (URL params, body)          │                  │
+│  │  - Gọi Auth Guard trước mọi operation        │                  │
+│  │  - Trả NextResponse.json()                   │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Auth Guard  AuthServiceApi                  │  ← Use Case      │
+│  │  - Đọc HTTP-only cookie                      │                  │
+│  │  - jwtVerify(token, ENV_SERVER.JWT_SECRET)   │                  │
+│  │  - Trả userId nếu hợp lệ, null nếu không    │                  │
+│  │  - Route trả 401 ngay nếu null               │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │  userId hợp lệ ✅                                         │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Service (Server)  api/[module]/[m].service  │  ← Use Case      │
+│  │  - Chứa toàn bộ business logic server        │                  │
+│  │  - Không biết gì về HTTP, Next.js            │                  │
+│  │  - Luôn scope query theo userId              │                  │
+│  │  - Chỉ trả về DTO (không trả Domain Model)  │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  ORM Layer  Drizzle ORM                      │  ← Interface     │
+│  │  - Type-safe SQL queries                     │    Adapter       │
+│  │  - Schema định nghĩa ở db/schema.ts          │                  │
+│  │  - Tự động returning() raw row               │                  │
+│  └──────┬───────────────────────────────────────┘                  │
+│         │                                                           │
+│         ▼                                                           │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │  Database  SQLite (better-sqlite3)           │  ← Framework     │
+│  │  - Persistent storage                        │    Driver        │
+│  │  - Có thể swap sang PostgreSQL               │                  │
+│  └──────────────────────────────────────────────┘                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Naming convention — Server vs Client Service
+
+| File                             | Chạy ở đâu      | Export                        |
+| -------------------------------- | --------------- | ----------------------------- |
+| `src/domains/[m]/[m].service.ts` | **Client**      | `[Module]ServiceClient` class |
+| `src/app/api/[m]/[m].service.ts` | **Server only** | `[Module]ServiceApi` object   |
+
+---
+
+## 6. Giao tiếp FE ↔ BE (System Flow)
+
+<FlowViewer
+  title="Full-Stack Communication Sequence"
+  height={500}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 50 }, data: { label: '🖼️ View' } },
+    { id: '2', type: 'custom', position: { x: 300, y: 50 }, data: { label: '⚡ Store Handler' } },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 550, y: 50 },
+      data: { label: '🏢 Repository (Client)' },
+    },
+    { id: '4', type: 'custom', position: { x: 800, y: 50 }, data: { label: '🔌 Route Handler' } },
+    { id: '5', type: 'custom', position: { x: 1050, y: 50 }, data: { label: '🛡️ Auth Guard' } },
+    {
+      id: '6',
+      type: 'custom',
+      position: { x: 1300, y: 50 },
+      data: { label: '⚙️ Service (Server)' },
+    },
+    { id: '7', type: 'custom', position: { x: 1300, y: 300 }, data: { label: '🗄️ Database' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'Action', animated: true },
+    { id: 'e2', source: '2', target: '3', label: 'Call Repo' },
+    { id: 'e3', source: '3', target: '4', label: 'HTTP Request' },
+    { id: 'e4', source: '4', target: '5', label: 'Check Auth' },
+    { id: 'e5', source: '5', target: '4', label: 'Return userId' },
+    { id: 'e6', source: '4', target: '6', label: 'Execute Logic' },
+    { id: 'e7', source: '6', target: '7', label: 'Drizzle Query' },
+    { id: 'e8', source: '7', target: '6', label: 'Raw Row' },
+    { id: 'e9', source: '6', target: '4', label: 'DTO' },
+    { id: 'e10', source: '4', target: '3', label: 'JSON response' },
+    { id: 'e11', source: '3', target: '2', label: 'Domain Model' },
+    { id: 'e12', source: '2', target: '1', label: 'Re-render', style: { stroke: '#3b82f6' } },
+  ]}
+/>
+
+### Ranh giới dữ liệu
+
+```text
+CLIENT                    BOUNDARY                    SERVER
+─────────────────────────────────────────────────────────────
+ITodo (Domain Model)   ←  Mapper  ←   ITodoDTO (DTO)
+camelCase                            snake_case
+có tempId, clientId                  khớp DB schema
+```
+
+---
+
+## 7. CRUD Operation Flows — Chi tiết
+
+Mọi operation đều đi qua cùng một pipeline:
+**Store Handler → Service → Repository → HTTP → Route Handler → Auth Guard → Server Service → DB**
+
+### 7.1 GET — Lấy danh sách
+
+<FlowViewer
+  title="GET Operation Flow"
+  height={350}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '⚡ Store' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '🏢 Repository' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 50 }, data: { label: '🔌 Route' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '⚙️ Server Svc' } },
+    { id: '5', type: 'custom', position: { x: 1250, y: 150 }, data: { label: '🗄️ DB' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'findAll()', animated: true },
+    { id: 'e2', source: '2', target: '3', label: 'GET /api/[m]' },
+    { id: 'e3', source: '3', target: '4', label: 'service.findAll' },
+    { id: 'e4', source: '4', target: '5', label: 'SELECT' },
+    { id: 'e5', source: '5', target: '4', label: 'Rows' },
+    { id: 'e6', source: '4', target: '1', label: 'Set State', style: { stroke: '#10b981' } },
+  ]}
+/>
+
+### 7.2 GET by ID — Lấy chi tiết 1 item
+
+<FlowViewer
+  title="GET by ID Flow"
+  height={300}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🏢 Repo' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '🔌 Route' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '⚙️ Svc' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '🗄️ DB' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'GET /id', animated: true },
+    { id: 'e2', source: '2', target: '3', label: 'findById' },
+    { id: 'e3', source: '3', target: '4', label: 'WHERE id' },
+    { id: 'e4', source: '4', target: '1', label: '200 OK / 404', style: { stroke: '#3b82f6' } },
+  ]}
+/>
+
+### 7.3 POST — Tạo mới
+
+<FlowViewer
+  title="POST (Optimistic) Flow"
+  height={400}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🖼️ UI' } },
+    { id: '2', type: 'custom', position: { x: 300, y: 50 }, data: { label: '⚡ Store' } },
+    { id: '3', type: 'custom', position: { x: 300, y: 250 }, data: { label: '🏢 Repo' } },
+    { id: '4', type: 'custom', position: { x: 600, y: 150 }, data: { label: '⚙️ Server' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'addItem' },
+    { id: 'e2', source: '2', target: '1', label: 'Optimistic UI', stroke: '#f59e0b' },
+    { id: 'e3', source: '2', target: '3', label: 'Call API' },
+    { id: 'e4', source: '3', target: '4', label: 'POST' },
+    { id: 'e5', source: '4', target: '2', label: 'Real ID Sync', style: { stroke: '#10b981' } },
+  ]}
+/>
+
+### 7.4 PUT — Cập nhật
+
+<FlowViewer
+  title="PUT (Rollback) Flow"
+  height={350}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🖼️ UI' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '⚡ Store' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '🏢 Repo' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '🔌 Route' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'updateItem' },
+    { id: 'e2', source: '2', target: '3', label: 'PUT' },
+    { id: 'e3', source: '3', target: '4', label: 'API call' },
+    { id: 'e4', source: '4', target: '2', label: 'Fail -> Rollback', style: { stroke: '#ef4444' } },
+    { id: 'e5', source: '4', target: '2', label: 'Success -> Sync', style: { stroke: '#10b981' } },
+  ]}
+/>
+
+### 7.5 DELETE — Xoá
+
+<FlowViewer
+  title="DELETE Flow"
+  height={300}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '⚡ Store' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '🏢 Repo' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '🔌 Route' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'delete()', animated: true },
+    { id: 'e2', source: '2', target: '3', label: 'DELETE' },
+    {
+      id: 'e3',
+      source: '3',
+      target: '1',
+      label: 'Rollback if Error',
+      style: { stroke: '#ef4444' },
+    },
+  ]}
+/>
+
+### Tổng hợp CRUD
+
+| Method     | Endpoint             | Optimistic?   | Body                | DB Operation                      |
+| ---------- | -------------------- | ------------- | ------------------- | --------------------------------- |
+| **GET**    | `/api/[module]`      | ❌            | —                   | `SELECT ... WHERE user_id`        |
+| **POST**   | `/api/[module]`      | ✅ (tempId)   | `{ title, ... }`    | `INSERT ... RETURNING`            |
+| **PUT**    | `/api/[module]/[id]` | ✅ (rollback) | `Partial<IItemDTO>` | `UPDATE ... WHERE id AND user_id` |
+| **DELETE** | `/api/[module]/[id]` | ✅ (rollback) | —                   | `DELETE ... WHERE id AND user_id` |
+
+---
+
+## 8. Mô hình dữ liệu — DTO vs Domain Model
+
+<FlowViewer
+  title="Data Transformation Flow"
+  height={300}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🗄️ Database (Row)' } },
+    {
+      id: '2',
+      type: 'custom',
+      position: { x: 400, y: 150 },
+      data: { label: '🔌 DTO (Server Contract)' },
+    },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 800, y: 150 },
+      data: { label: '⚪ Domain Model (Client)' },
+    },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'Drizzle ORM' },
+    { id: 'e2', source: '2', target: '3', label: 'Mapper.toDomain()', animated: true },
+    { id: 'e3', source: '3', target: '2', label: 'Mapper.toServer()' },
+  ]}
+/>
+
+### Ví dụ — Todo
+
+| Trường DB (`snake_case`) | DTO (`ITodoDTO`) | Domain Model (`ITodo`)        |
+| ------------------------ | ---------------- | ----------------------------- |
+| `id`                     | `id`             | `id`                          |
+| `user_id`                | `user_id`        | _(bỏ đi, không cần ở client)_ |
+| `created_at`             | `created_at`     | `createdAt`                   |
+| `position`               | `position`       | `position`                    |
+| _(không có)_             | _(không có)_     | `tempId` ← client-only        |
+
+---
+
+## 9. SSR Hydration — Zero Flicker
+
+<FlowViewer
+  title="Hydration Flow"
+  height={300}
+  initialNodes={[
+    {
+      id: '1',
+      type: 'custom',
+      position: { x: 50, y: 150 },
+      data: { label: '🖥️ Page.tsx (Server)' },
+    },
+    { id: '2', type: 'custom', position: { x: 350, y: 150 }, data: { label: '📦 StoreProvider' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '🗄️ Zustand Store' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '🖼️ View' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: '1', target: '2', label: 'initialData props', animated: true },
+    { id: 'e2', source: '2', target: '3', label: 'Zustand.hydrate()' },
+    { id: 'e3', source: '3', target: '4', label: 'Render immediately' },
+  ]}
+/>
+
+---
+
+## 10. Optimistic Update
+
+1.  **UI Action**: User tick hoàn thành todo.
+2.  **Optimistic State**: Store cập nhật local state ngay lập tức, `pendingCount++`.
+3.  **Network**: Call API trong background.
+4.  **Sync**:
+    - **Thành công**: Cập nhật data thật từ server (real ID), `pendingCount--`.
+    - **Thất bại**: Rollback state cũ, báo lỗi, `pendingCount--`.
+
+---
+
+## 11. Phong Cách Code & Quy Ước
+
+### 11.1 "Triết lý về Hợp đồng (Contract)"
+
+Zod schemas KHÔNG thuộc về Domain. Chúng là **Hợp đồng Validation** giữa UI (React Hook Form) và Logic Ứng dụng (UseCase).
+
+- **Quy tắc**: Giúp giữ quy tắc validation gần nơi sử dụng (Forms/Hooks).
+- **Thực thi**: Dùng `schema.parse()` trong UseCases để kiểm tra đầu vào nghiêm ngặt trước khi thực hiện logic nghiệp vụ.
+
+### 11.2 Zustand Stores
+
+- **Store Handlers**: Dùng Store Handlers để đóng gói các thay đổi state phức tạp, giữ cho component sạch sẽ.
+- **Performance**: Dùng `Object.assign(state, handler)` thay vì object spread `{ ...state, ...handler }` để cập nhật state hiệu quả hơn.
+- **Selective Rendering**: Luôn dùng `useShallow` và **Selector** để chỉ re-render những gì cần thiết.
+
+### 11.3 Chi tiết Quy Ước Đặt Tên
+
+Để cả team làm việc trơn tru, hãy tuân thủ các quy tắc đặt tên sau:
+
+#### 📂 Use Cases
+
+- **File**: `[action].use-case.ts` (vd: `create.use-case.ts`)
+- **Class**: `[Action][Module]UseCase` (vd: `CreateTodoUseCase`)
+
+#### 📂 Repositories
+
+- **Interface**: `I[Module]Repository` (nằm trong `domains/[module]/`)
+- **Implementation**: `Http[Module]Repository` hoặc `Mock[Module]Repository` (nằm trong cùng folder).
+
+#### 📂 Components
+
+- **Thư mục**: Dùng **kebab-case** (vd: `todo-item-card`).
+- **File Component**: Dùng **PascalCase** (vd: `index.tsx`).
+
+---
+
+> [!TIP]
+> **Lời khuyên**: Nếu thấy logic bắt đầu "phình to" ở UI, hãy nghĩ ngay đến việc tách nó ra một **UseCase** hoặc **Store Handler**. UI chỉ nên biết "nút này bấm vào thì gọi hàm gì", đừng để UI biết "hàm đó gọi API nào".

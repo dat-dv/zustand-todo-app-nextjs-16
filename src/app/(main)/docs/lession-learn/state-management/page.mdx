@@ -1,0 +1,337 @@
+# State Management (Zustand & Architecture)
+
+Tất cả bài học về quản lý State, tối ưu Performance và bảo mật cho Store.
+
+---
+
+## 1. Khởi tạo State từ Server (Hydration)
+
+Để UI không bị nháy (Flickering), data phải có sẵn ngay từ Server Page.
+
+- **Page**: Fetch data và truyền xuống Provider.
+- **Provider**: Dùng `useRef` tạo Store instance và "bơm" data vào qua `initProps`.
+- **Lợi ích**: Zero Flicker, SEO tốt và trải nghiệm mượt mà.
+
+---
+
+## 2. Tối ưu Re-render (Performance)
+
+Đừng bao giờ lấy cả Store! Chỉ lấy cái mình cần.
+
+- **useShallow & Selector**: Luôn dùng cặp bài trùng này để tránh render lại vô ích khi các state khác thay đổi.
+- **Pure Store**: Store chỉ chứa data và hàm set/get đơn giản. Tuyệt đối không gọi API hay nhồi nhét xử lý async phức tạp vào đây.
+
+---
+
+## 2.1 Khi nào dùng useShallow (Thực chiến)
+
+90% Dev dùng sai `useShallow`. Hãy nhớ nguyên tắc cốt lõi: **Chỉ dùng khi selector trả về OBJECT mới mỗi lần render.**
+
+### 🔥 1. Khi nào PHẢI dùng useShallow
+
+Case kinh điển: **Combine nhiều field** vào một object.
+
+```ts
+// ❌ SAI: { a: 1, b: 2 } !== { a: 1, b: 2 } (luôn tạo ref mới)
+const { a, b } = useStore((s) => ({ a: s.a, b: s.b }));
+
+// ✅ ĐÚNG: Shallow compare sẽ so sánh prev.a === next.a
+const { a, b } = useStore(useShallow((s) => ({ a: s.a, b: s.b })));
+```
+
+### 🚫 2. Khi nào KHÔNG nên dùng
+
+- **Lấy 1 field (Primitive)**: `s => s.count`. Primitive đã được Zustand tối ưu so sánh giá trị sẵn.
+- **Lấy nguyên Object/Array từ Store**: Shallow KHÔNG so sánh sâu từng phần tử. Nếu reference của Array trong store đổi, component vẫn re-render dù nội dung giống nhau.
+- **Computed Logic phức tạp**: Nếu logic bên trong selector luôn tạo object mới với value mới, `useShallow` sẽ gây khó debug.
+
+### 💡 Mẹo: Tách Selector vs Gom Nhóm (Selector Design)
+
+#### Cách 1: Tách Selector (Khuyên dùng cho Performance)
+
+Tách nhỏ để đạt hiệu năng tối đa, mỗi field tự quản lý re-render.
+
+```ts
+const loading = useAuthStore((s) => s.loading);
+const error = useAuthStore((s) => s.error);
+const setLoading = useAuthStore((s) => s.setLoading);
+```
+
+#### Cách 2: Gom nhóm bằng useShallow (Khuyên dùng cho Clean Code)
+
+Dùng khi bạn muốn code gọn hơn cho các bộ field luôn đi kèm với nhau.
+
+```ts
+const { loading, error, setLoading } = useAuthStore(
+  useShallow((s) => ({
+    loading: s.loading,
+    error: s.error,
+    setLoading: s.setLoading,
+  })),
+);
+```
+
+- **Ưu điểm**: Code cực kỳ gọn (1 dòng thay vì 3-5 dòng).
+- **Hiệu quả**: Nhờ `useShallow`, component vẫn không bị re-render thừa nếu các giá trị bên trong không đổi.
+
+> [!IMPORTANT]
+> **Kết luận**: `useShallow` không phải là "default". Nó là công cụ chữa cháy khi bạn muốn **return object literal** mà vẫn giữ được hiệu năng. Nếu bạn thấy Hook của mình đang quá dài vì tách selector, `useShallow` chính là cứu cánh để làm code "sạch" hơn.
+
+---
+
+## 3. Kiến Trúc & Vị Trí (Integration)
+
+Store không chứa Logic nghiệp vụ. Nó là điểm đến cuối cùng của dữ liệu.
+
+### Nguyên tắc 3 KHÔNG:
+
+1. **KHÔNG** gọi API trong Store.
+2. **KHÔNG** xử lý logic nghiệp vụ (Business Rules) trong Store.
+3. **KHÔNG** lưu trữ dữ liệu tạm (Draft) nếu không cần share giữa các trang.
+
+---
+
+## 4. Chi tiết 3 Luồng Dữ Liệu (The Triple-Flow)
+
+Để hệ thống luôn ổn định, mọi dữ liệu phải đi qua đúng "làn đường" của nó.
+
+### 4.1 Luồng Khởi tạo (SSR Init Flow - Một chiều)
+
+Đây là cách chúng ta đạt được **Zero Flicker**.
+
+- **Server**: `Page` gọi `Repository` -> Nhận `InitialData` sạch.
+- **Bridge**: `StoreProvider` nhận data -> Khởi tạo Store instance duy nhất cho request đó.
+- **Client**: UI render ngay lập tức với data đã "bơm" sẵn, không cần đợi `useEffect`.
+
+<FlowViewer
+  title="SSR Init Flow (Server to Client)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 50 }, data: { label: '🖥️ Server Page' } },
+    { id: '2', type: 'custom', position: { x: 650, y: 50 }, data: { label: '⚡ UseCase + Repo' } },
+    { id: '3', type: 'custom', position: { x: 50, y: 350 }, data: { label: '📦 StoreProvider' } },
+    { id: '4', type: 'custom', position: { x: 650, y: 350 }, data: { label: '🌐 Browser UI' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) useCase.execute()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      label: '(2) Trả về Entity/DTO',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '1',
+      sourceHandle: 'source-right',
+      target: '3',
+      targetHandle: 'target-left',
+      animated: true,
+      label: '(3) Bơm qua initialProps',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '3',
+      sourceHandle: 'source-right',
+      target: '4',
+      targetHandle: 'target-left',
+      label: '(4) Hydrate Store',
+      style: { stroke: '#10b981' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+### 4.2 Luồng Đọc (Read Flow - Reactive)
+
+Sử dụng sức mạnh của Zustand Selector.
+
+- **UI**: Đăng ký lấy một phần nhỏ dữ liệu qua `useTodoStore(s => s.items)`.
+- **System**: Zustand theo dõi biến động.
+- **Performance**: Chỉ re-render UI khi `items` thay đổi. Các state khác (ví dụ `filter`) đổi màu, UI danh sách không bị render lại.
+
+<FlowViewer
+  title="Read Flow (Reactive)"
+  height={350}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 200 }, data: { label: '🖼️ UI Component' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 50 }, data: { label: '🔍 Selector' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 200 }, data: { label: '🗄️ Zustand Store' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-left',
+      animated: true,
+      label: '(1) useStore(select)',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-right',
+      target: '3',
+      targetHandle: 'target-top',
+      label: '(2) Lấy Atom State',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-left',
+      target: '1',
+      targetHandle: 'target-right',
+      animated: true,
+      label: '(3) Re-render (Reactive)',
+      style: { stroke: '#3b82f6' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+### 4.3 Luồng Cập nhật (Update Flow - Command)
+
+Đây là nơi **Adapter (Hook)** và **UseCase** tỏa sáng.
+
+- **UI**: User bấm nút "Hoàn thành". UI gọi `toggleTodo(id)` từ Hook.
+- **Logic**: Hook gọi `toggleTodoUseCase.execute(id)`.
+- **Infrastructure**: UseCase gọi `Repository` -> Gọi API/DB.
+- **Final Sync**: KHI VÀ CHỈ KHI API thành công, Hook mới gọi `store.updateItem(id)` để cập nhật UI.
+- _Tip_: Có thể dùng **Optimistic Update** nếu muốn app cho cảm giác "siêu tốc".
+
+<FlowViewer
+  title="Update Flow (Clean Architecture)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 50 }, data: { label: '🖱️ User Click' } },
+    { id: '2', type: 'custom', position: { x: 300, y: 50 }, data: { label: '🪝 Hook (Adapter)' } },
+    { id: '3', type: 'custom', position: { x: 550, y: 50 }, data: { label: '⚡ UseCase' } },
+    { id: '4', type: 'custom', position: { x: 800, y: 50 }, data: { label: '🏢 Repository' } },
+    { id: '5', type: 'custom', position: { x: 1050, y: 50 }, data: { label: '🌐 API / External' } },
+    { id: '6', type: 'custom', position: { x: 300, y: 300 }, data: { label: '🗄️ Zustand Store' } },
+    { id: '7', type: 'custom', position: { x: 50, y: 300 }, data: { label: '🖼️ UI Update' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-right',
+      target: '2',
+      targetHandle: 'target-left',
+      animated: true,
+      label: '(1) UI Action',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-right',
+      target: '3',
+      targetHandle: 'target-left',
+      animated: true,
+      label: '(2) useCase.execute()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-right',
+      target: '4',
+      targetHandle: 'target-left',
+      animated: true,
+      label: '(3) repo.update()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '4',
+      sourceHandle: 'source-right',
+      target: '5',
+      targetHandle: 'target-left',
+      animated: true,
+      label: '(4) API Persist',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e5',
+      source: '5',
+      sourceHandle: 'source-bottom',
+      target: '4',
+      targetHandle: 'target-right',
+      label: '(5) Success Code',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e6',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-right',
+      label: '(6) Map to Entity',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e7',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-right',
+      label: '(7) Return Result',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e8',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '6',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(8) store.set()',
+      style: { stroke: '#10b981' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e9',
+      source: '6',
+      sourceHandle: 'source-left',
+      target: '7',
+      targetHandle: 'target-right',
+      animated: true,
+      label: '(9) View Update',
+      style: { stroke: '#3b82f6' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## 5. Bảo mật & Logout
+
+Bài học xương máu: Phải xóa **HTTP-only Cookie** ở Server trước, sau đó mới xóa Store ở Client. Nếu chỉ xóa store mà quên cookie, F5 lại trang sẽ thấy data cũ — cực kỳ nguy hiểm.
+
+---
+
+## Tóm lại
+
+- **Hydrate** từ Server để chống nháy.
+- **Isolated** render bằng `useShallow`.
+- **Pure Store** & Tách biệt Layer.
+- **Security**: Logout phải xóa Cookie từ Server.
+- **The Triple-Flow**: Đọc (Reactive), Cập nhật (Command), Init (SSR Path).

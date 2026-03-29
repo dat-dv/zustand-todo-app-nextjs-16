@@ -1,0 +1,36 @@
+# Zustand Todo App
+
+Project này mình làm để test **Next.js 16 + Zustand**. Ngon, bổ, rẻ!
+
+---
+
+## Tech Stack
+
+- **Next.js 16 (App Router)**: Mới nhất, chạy mượt.
+- **Zustand**: State management siêu nhẹ, không rườm rà.
+- **SQLite + Drizzle**: Setup DB nhanh, code type-safe.
+- **Framer Motion**: Thêm tí animation cho nó "premium".
+
+---
+
+## Cách tổ chức code
+
+Mình chia theo Layer cho dễ bảo trì:
+
+1. **`src/domain`**: Chứa logic "xịn", không dính dáng gì đến giao diện.
+2. **`src/store`**: Quản lý state phía client (Zustand).
+3. **`src/hooks`**: Cầu nối (Adapter) gắn kết UI và Domain logic.
+4. **`src/components`**: Giao diện, chia theo Atomic Design.
+
+---
+
+## Lessons Learned (Bài học kinh nghiệm)
+
+Sau dự án này, mình rút ra được vài cái "bí kíp" để app chạy "tín" nhất:
+
+- **[Toàn bộ Kiến Trúc Hệ Thống](/docs/architecture)**: Tài liệu chi tiết về Clean Architecture, phân lớp FE/BE và cách các thành phần trong dự án tương tác với nhau.
+- **[Tại sao Next.js (BFF)](/docs/lession-learn/why-nextjs)**: Giải mã vai trò của Next.js khi đứng cạnh một Backend (Java/Go) mạnh mẽ. Tại sao anh nên dùng Server Actions thay vì API Routes cho đa số trường hợp?
+- **[SSR Hydration & Next-Architecture](/docs/lession-learn/next-architecture)**: Đừng bao giờ gọi API nội bộ bằng HTTP. Hãy dùng **Direct DB Access** ngay trong Server Component để đạt tốc độ vật lý — **Zero Flicker!**
+- **[Tối ưu State & Re-render](/docs/lession-learn/state-management)**: Luôn dùng `useShallow` và `Selector`. Tách biệt **Isolated Rendering** cho Form bằng `FormProvider + useFormState` để gõ phím mượt mà, không bị delay.
+- **[Vũ khí Sơ đồ (Visual Flows)](/docs/architecture#4-luồng-dữ-liệu-tương-tác)**: Dùng **FlowViewer** để vẽ lại luồng dữ liệu (Query/Command Flow) giúp cả team hiểu app chạy như thế nào chỉ trong 1 nốt nhạc.
+- **[Biến môi trường (Server vs Public)](/docs/conventions/env)**: Cách phân tách bí mật server-side và dữ liệu công khai phía client để bảo mật tuyệt đối cho dự án.

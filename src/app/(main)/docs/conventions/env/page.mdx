@@ -1,0 +1,59 @@
+# 🔐 Environment Variables Guide
+
+Tách rõ **Server (bí mật)** và **Public (công khai)**.
+
+---
+
+## 1. Phân loại
+
+| Loại   | File                   | Prefix         | Scope           |
+| :----- | :--------------------- | :------------- | :-------------- |
+| Server | `server.config.ts`     | Không          | Chỉ Server      |
+| Public | `public.env.config.ts` | `NEXT_PUBLIC_` | Client + Server |
+
+> `server.config.ts` phải có `import 'server-only'`
+
+---
+
+## 2. Rule
+
+### ❌ Sai
+
+```ts
+import { ENV_SERVER } from '@/config/server.config'; // client dùng -> toang
+```
+
+### ✅ Đúng
+
+```ts
+import { ENV_PUBLIC } from '@/config/public.env.config'; // client dùng ok
+```
+
+```ts
+// server dùng cả 2
+ENV_SERVER.DB_URL;
+ENV_PUBLIC.API_URL;
+```
+
+---
+
+## 3. Nguyên tắc
+
+- Server env → **không được leak** (JWT, DB, secret)
+- Public env → **chấp nhận lộ** (API URL, flag)
+
+---
+
+## 4. Vì sao không dùng constant?
+
+- Env đổi theo môi trường (dev/prod)
+- Không cần build lại
+- Deploy linh hoạt
+
+---
+
+## 5. Kết luận
+
+- Server → chỉ server
+- Public → client + server
+- Env = config runtime, không phải constant

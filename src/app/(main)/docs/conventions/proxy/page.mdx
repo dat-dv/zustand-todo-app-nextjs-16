@@ -1,0 +1,64 @@
+# Routing & Protection
+
+Kiểm soát việc ai được vào xem cái gì, và hướng dẫn user đi đúng hướng (về Home hoặc Login).
+
+---
+
+## 1. Cơ chế Middleware (Proxy)
+
+Dự án dùng `src/proxy.ts` để chặn đánh chặn request trước khi vào trang:
+
+- **Private Routes**: `/profile`, `/todo`. User chưa đăng nhập → Đá về `/login`.
+- **Auth Routes**: `/login`, `/register`. User ĐÃ đăng nhập → Đá về `/home`.
+
+---
+
+## 2. Callback Redirect
+
+Khi user cố tình vào `/todo` mà chưa login, app sẽ nhớ URL đó:
+`URL: /login?callback_url=/todo`
+
+Sau khi login xong, app sẽ tự động đưa user quay lại trang `/todo` ban đầu.
+
+---
+
+## 3. Quy tắc "Bất di bất dịch"
+
+- Mọi trang mới cần bảo mật đều phải được khai báo trong `privateRoutes` của `src/proxy.ts`.
+- Tuyệt đối không để Token hết hạn "nằm vùng": Middleware sẽ tự động xóa cookie `AUTH_TOKEN` nếu nó không còn hợp lệ.
+
+---
+
+<FlowViewer
+  title="Luồng kiểm tra Quyền truy cập (Auth Guard)"
+  height={500}
+  initialNodes={[
+    {
+      id: 'start',
+      type: 'custom',
+      position: { x: 375, y: 0 },
+      data: { label: 'Request vào trang' },
+    },
+    {
+      id: 'is_private',
+      type: 'custom',
+      position: { x: 375, y: 120 },
+      data: { label: 'Là Private Route?' },
+    },
+    {
+      id: 'has_token',
+      type: 'custom',
+      position: { x: 550, y: 240 },
+      data: { label: 'Có Token hợp lệ?' },
+    },
+    { id: 'login', type: 'custom', position: { x: 725, y: 360 }, data: { label: 'Đá về Login' } },
+    { id: 'allow', type: 'custom', position: { x: 200, y: 450 }, data: { label: 'Cho vào' } },
+  ]}
+  initialEdges={[
+    { id: 'e1', source: 'start', target: 'is_private', animated: true },
+    { id: 'e2', source: 'is_private', target: 'has_token', label: 'Có' },
+    { id: 'e3', source: 'is_private', target: 'allow', label: 'Không' },
+    { id: 'e4', source: 'has_token', target: 'allow', label: 'Có' },
+    { id: 'e5', source: 'has_token', target: 'login', label: 'Không' },
+  ]}
+/>

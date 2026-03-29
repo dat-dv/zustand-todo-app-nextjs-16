@@ -1,0 +1,72 @@
+# Kiến Trúc Hệ Thống
+
+Dự án áp dụng **Clean Architecture** (Robert C. Martin) kết hợp **Atomic Design**.
+
+---
+
+## 1. Triết lý: Quy tắc phụ thuộc
+
+Mọi mũi tên phụ thuộc đều hướng **vào trong** (Inner Layers). Tầng lõi (Domain) không được biết gì về tầng ngoài (UI/Next.js/Database).
+
+<FlowViewer
+  title="Quy tắc phụ thuộc (Clean Architecture)"
+  height={300}
+  initialNodes={[
+    {
+      id: 'f',
+      type: 'custom',
+      position: { x: 50, y: 100 },
+      data: { label: '🏢 Frameworks (Next.js, DB, UI)' },
+    },
+    {
+      id: 'a',
+      type: 'custom',
+      position: { x: 400, y: 100 },
+      data: { label: '🪝 Adapters (Hooks, Repos)' },
+    },
+    {
+      id: 'd',
+      type: 'custom',
+      position: { x: 750, y: 100 },
+      data: { label: '⚡ Domain (UseCases, Entities)' },
+    },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: 'f',
+      sourceHandle: 'source-right',
+      target: 'a',
+      targetHandle: 'target-left',
+      animated: true,
+      label: 'Depend On',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: 'a',
+      sourceHandle: 'source-right',
+      target: 'd',
+      targetHandle: 'target-left',
+      animated: true,
+      label: 'Depend On',
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## 2. 4 Vòng tròn (Văn nói)
+
+- **Trắng (Lõi)**: `Domain Entity` (ITodo) + `Use Case`. Đây là nơi chứa logic "hái ra tiền".
+- **Xanh (Adapter)**: `Repository`, `Mapper`, `Hooks`. Cầu nối cho dữ liệu đi vào/ra.
+- **Vàng (Framework)**: `React`, `Zustand`, `SQLite`. Đồ chơi để app chạy được.
+
+---
+
+## 3. Tại sao lại làm phức tạp thế?
+
+- **Dễ test**: Mocking Repo cực nhanh.
+- **Dễ đổi đồ**: Nếu sau này muốn đổi sang `PostgreSQL` hoặc `MobX` thì phần logic `Domain` vẫn giữ nguyên 100%.
+- **Dễ đọc**: File nằm đâu là biết nó làm gì ở đó.

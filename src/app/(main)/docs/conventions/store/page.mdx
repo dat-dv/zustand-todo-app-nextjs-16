@@ -1,0 +1,62 @@
+# Global State (Zustand)
+
+Mỗi trang dùng **một Store riêng** để tránh rò rỉ state và tối ưu performance.
+
+---
+
+## 1. SSR Hydration (Chống Flickering)
+
+Để UI không bị nháy (trắng trang rồi mới hiện data), chúng ta dùng cơ chế **Hydration** từ Server:
+
+1. **Server Page**: Fetch data trực tiếp từ DB.
+2. **Provider**: Nhận data đó làm `initialState`.
+3. **Store**: Khởi tạo với data có sẵn, UI render ra là có dữ liệu ngay.
+
+```tsx
+// Page.tsx (Server)
+const data = await todoService.findAll();
+
+return (
+  <TodoProvider initialState={data}>
+    <TodoView />
+  </TodoProvider>
+);
+```
+
+> [!TIP]
+> Nhờ cách này, Next.js sẽ render HTML có sẵn dữ liệu, người dùng thấy data ngay lập tức mà không cần chờ `useEffect` chạy ở Client.
+
+---
+
+## 2. Tối ưu Re-render (Selector & useShallow)
+
+Zustand rất nhanh, nhưng nếu dùng sai cách sẽ làm Component render lại vô ích mỗi khi bất kỳ state nào thay đổi.
+
+### Tại sao dùng Selector?
+
+Khi anh dùng `const state = useStore()`, Component sẽ "đăng ký" theo dõi **toàn bộ** store. Chỉ cần một biến nhỏ (vd: `count`) thay đổi, toàn bộ danh sách Todo cũng bị render lại.
+
+### Tại sao cần useShallow?
+
+Khi anh lấy nhiều field cùng lúc bằng selector (trả về một Object mới), React sẽ thấy Object đó "khác" với Object cũ (về tham chiếu) và ép render lại. `useShallow` giúp so sánh nông (shallow compare) các giá trị bên trong, nếu giá trị không đổi thì **không render lại**.
+
+```tsx
+// ✅ Chuẩn: Chỉ render lại nếu 'todos' hoặc 'loading' thay đổi giá trị
+const { todos, loading } = useTodoStore(
+  useShallow((s) => ({
+    todos: s.todos,
+    loading: s.loading,
+  })),
+);
+
+// ❌ Tệ: Render lại mỗi khi BẤT KỲ cái gì trong store thay đổi
+const store = useTodoStore();
+```
+
+---
+
+## 3. Quy tắc Store
+
+- **State**: Chỉ chứa dữ liệu thuần (JSON).
+- **Actions**: Chứa logic thay đổi state (set, update, delete).
+- **Computed**: Dùng selector để tính toán data (vd: `totalChecked = todos.filter(...)`).

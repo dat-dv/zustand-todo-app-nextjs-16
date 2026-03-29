@@ -1,0 +1,21 @@
+# testing
+**/*.spec.ts
+**/*.test.ts
+**/__tests__
+/coverage
+
+# documentation
+README.md
+ARCHITECTURE.md
+LICENSE
+
+# misc
+node_modules
+.next
+.git
+.gitignore
+.dockerignore
+sqlite.db
+sqlite.db-journal
+*.tsbuildinfo
+

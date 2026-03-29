@@ -1,0 +1,81 @@
+# Hook Layer
+
+Hook là **Adapter** — cầu nối giữa UI và Logic nghiệp vụ.
+
+---
+
+## Trách nhiệm
+
+- Nhận action từ UI → validate (Zod) → gọi UseCase.
+- Quản lý optimistic update + rollback nếu lỗi.
+- Cập nhật Store sau khi UseCase trả về kết quả.
+
+<FlowViewer
+  title="Hook Adapter Flow"
+  height={300}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 75 }, data: { label: '🖼️ UI Component' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 75 }, data: { label: '🪝 Hook (Adapter)' } },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 650, y: 75 },
+      data: { label: '⚡ UseCase -> Store' },
+    },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      target: '2',
+      animated: true,
+      label: '(1) Event Action',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      target: '3',
+      animated: true,
+      label: '(2) execute() & sync store',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(3) result feedback',
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## Optimistic Update
+
+```typescript
+// useTodoAction.ts
+async function deleteTodo(id: string) {
+  // 1. Cập nhật Store ngay (optimistic)
+  store.removeTodo(id);
+
+  try {
+    // 2. Gọi UseCase
+    await deleteTodoUseCase.execute(id);
+  } catch {
+    // 3. Rollback nếu lỗi
+    store.restoreTodo(id);
+    toast.error('Xóa thất bại');
+  }
+}
+```
+
+---
+
+## Quy tắc
+
+- Component chỉ gọi hàm từ Hook, không tự gọi Store.
+- Dùng `useShallow` khi lấy nhiều field từ Store cùng lúc.

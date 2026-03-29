@@ -1,0 +1,94 @@
+# Use Case Layer
+
+Nơi thực thi một **User Story** cụ thể. Kết nối giữa Hook, Domain và Infrastructure.
+
+---
+
+## Trách nhiệm
+
+- **Điều phối**: Gọi Repository lấy data.
+- **Business Logic**: Áp dụng các quy tắc kiểm tra (ví dụ: Task đã xong thì không cho xóa).
+- **Độc lập**: Không quan tâm UI là gì (React/Vue/Terminal).
+
+---
+
+## Ví dụ
+
+```typescript
+// src/domain/todo/use-cases/create.use-case.ts
+export class CreateTodoUseCase extends UseCase<Request, Promise<ITodo>> {
+  constructor(private repository: ITodoRepository) {
+    super();
+  }
+
+  async execute(req: Request): Promise<ITodo> {
+    // 1. Check logic (nếu có)
+    if (!req.title) throw new Error('Cần nhập tiêu đề');
+
+    // 2. Lưu xuống DB qua Repo
+    return await this.repository.create(req);
+  }
+}
+```
+
+---
+
+<FlowViewer
+  title="UseCase Orchestration"
+  height={300}
+  initialNodes={[
+    {
+      id: '1',
+      type: 'custom',
+      position: { x: 50, y: 75 },
+      data: { label: '🪝 Adapter (Hook/Page)' },
+    },
+    {
+      id: '2',
+      type: 'custom',
+      position: { x: 400, y: 75 },
+      data: { label: '⚡ UseCase (Domain)' },
+    },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 750, y: 75 },
+      data: { label: '🏢 Repository (Infra)' },
+    },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      target: '2',
+      animated: true,
+      label: '(1) execute()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      target: '3',
+      animated: true,
+      label: '(2) call repo',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(3) Return Entity',
+      style: { stroke: '#34d399' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## Quy tắc
+
+- Đặt tên: `[Hành động][Tên Module]UseCase` (vd: `DeleteTodoUseCase`).
+- **Không** khởi tạo Repository trực tiếp — truyền qua constructor để dễ Unit Test (Mocking).

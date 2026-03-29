@@ -1,0 +1,21 @@
+# Component Layer
+
+Dùng **Atomic Design** đơn giản: `Atom → Molecule → Organism`.
+
+---
+
+## Phân cấp
+
+| Layer        | Là gì                           | Ví dụ                     |
+| ------------ | ------------------------------- | ------------------------- |
+| **Atom**     | Đơn vị nhỏ nhất, không có state | `Button`, `Input`, `Icon` |
+| **Molecule** | Ghép Atoms lại thành khối       | `FormInput`, `TodoItem`   |
+| **Organism** | Phụ thuộc Store, chứa logic UI  | `TodoList`, `PageHeader`  |
+
+---
+
+## Quy tắc
+
+- **Dumb component**: chỉ nhận Props, không gọi Store trực tiếp (trừ Organism).
+- **React.memo**: dùng cho list item để tránh re-render thừa.
+- Không đặt logic phức tạp trong component — đưa hết vào Hook.

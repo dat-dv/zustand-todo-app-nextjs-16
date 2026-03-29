@@ -1,0 +1,45 @@
+# Unit Test Rules
+
+Dự án ưu tiên Unit Test cho **UseCase** và **Domain Logic**. Chúng ta dùng `vitest`.
+
+---
+
+## 1. Mocking Repository
+
+Nhờ Dependency Injection, chúng ta dễ dàng thay Repository thật bằng Mock để test UseCase độc lập:
+
+```typescript
+// tests/create-todo.spec.ts
+it('nên báo lỗi khi title trống', async () => {
+  // Gỉa lập Repository
+  const mockRepo = { create: vi.fn() };
+  const useCase = new CreateTodoUseCase(mockRepo as any);
+
+  // Thực thi & kỳ vọng lỗi
+  await expect(useCase.execute({ title: '' })).rejects.toThrow('Cần nhập tiêu đề');
+});
+```
+
+---
+
+## 2. Quy tắc
+
+- **File test**: Đặt cùng thư mục hoặc trong `__tests__` ngay cạnh file cần test.
+- **Tên**: `[tên-file].spec.ts` (vd: `todo.service.spec.ts`).
+- **Focus**: Chỉ test Logic nghiệp vụ (UseCase), không test thư viện React hay Component quá sâu.
+
+---
+
+## Command
+
+Chạy test tất cả mọi thứ:
+
+```bash
+npm run test
+```
+
+Hoặc xem UI trực quan:
+
+```bash
+npm run test:ui
+```

@@ -1,0 +1,262 @@
+# Tại sao dùng Next.js (Khi đã có Backend riêng)?
+
+Câu hỏi lớn nhất khi bắt đầu một dự án là: **"Nếu tôi đã có một Backend mạnh (Java, Go, Node.js...), tại sao tôi phải dùng Next.js thay vì React (SPA) thuần?"**
+
+NextJS không chỉ là một framework UI, nó là một **BFF (Backend For Frontend)** — một lớp "trung chuyển" thông minh giúp tối ưu hóa trải nghiệm người dùng cuối cùng.
+
+---
+
+## 1. Vai trò của BFF (Backend For Frontend)
+
+Thay vì để Client (Browser) gọi trực tiếp hàng chục API từ Backend chính, Next.js đóng vai trò là lớp **Integration Layer**.
+
+### 🚀 Tốc độ vật lý (Performance)
+
+- **Server-to-Server communication**: Next.js Server gọi Backend chính qua môi trường mạng nội bộ (Internal Network) có độ trễ cực thấp (< 1ms), thay vì Client gọi qua Internet (50ms - 200ms).
+- **Data Aggregation**: Thay vì gọi 3 API `getUser`, `getOrders`, `getNotifications` từ Client, Next.js Server gộp chúng lại và trả về duy nhất 1 gói dữ liệu (HTML/RSC), giúp giảm **Network Waterfall**.
+
+### 🛡️ Bảo mật & Proxying
+
+- **Hide Your Infrastructure**: Giấu các Endpoint thực sự của Backend. User chỉ thấy `domain.com/api/...`, không bao giờ biết được URL nội bộ của Microservices.
+- **Handling CORS**: Giải quyết triệt để lỗi CORS vì mọi yêu cầu đều được thực hiện từ Server sang Server.
+- **Secret Management**: Các API Keys hoặc Token nhạy cảm (như OpenAI Key, AWS Secret) chỉ nằm ở Next.js Server, không bao giờ lộ ra Client.
+
+<FlowViewer
+  title="BFF Architecture (Next.js làm trung gian)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🌐 Browser UI' } },
+    {
+      id: '2',
+      type: 'custom',
+      position: { x: 500, y: 150 },
+      data: { label: '🖥️ Next.js (Page -> UseCase)' },
+    },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 950, y: 150 },
+      data: { label: '⚙️ Java/Go Backend' },
+    },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) Public Request',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-top',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(2) useCase.execute() -> Internal API',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(3) Base Data',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      animated: true,
+      label: '(4) Rendered HTML/RSC',
+      style: { stroke: '#3b82f6' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## 2. Server Components (RSC) - Vũ khí tối thượng
+
+Next.js 16 (App Router) cho phép bạn giữ logic xử lý dữ liệu ở Server.
+
+- **Bundle Size siêu nhẹ**: Bạn dùng thư viện `lodash`, `moment`, hoặc `markdown-parser` ở Server? Browser sẽ nhận về **0 byte** JS của các thư viện đó. Nó chỉ nhận về kết quả HTML cuối cùng.
+- **Direct Access**: Nếu Next.js nằm cùng Server với DB, bạn có thể truy cập thẳng DB mà không cần qua tầng HTTP, đạt tốc độ tiệm cận mức vật lý.
+
+<FlowViewer
+  title="React Server Components (RSC) Flow"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 50 }, data: { label: '🖥️ Next.js Server' } },
+    {
+      id: '2',
+      type: 'custom',
+      position: { x: 550, y: 50 },
+      data: { label: '📚 Heavy Libs (Markdown/Date)' },
+    },
+    {
+      id: '3',
+      type: 'custom',
+      position: { x: 50, y: 350 },
+      data: { label: '🌐 Browser (Zero JS)' },
+    },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-right',
+      target: '2',
+      targetHandle: 'target-left',
+      animated: true,
+      label: '(1) Logic processing',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '1',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(2) Trả về kết quả HTML sạch',
+      style: { stroke: '#10b981' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## 3. Khi nào dùng API Routes và Server Actions?
+
+Đây là phần anh thường nhầm lẫn khi đã có Backend riêng. Hãy tuân thủ **The 3 Layers Mindset**:
+
+### 🟢 Server Actions (Lớp Tương tác - Interaction)
+
+Dùng khi User thực hiện hành động trên App (Bấm nút, Submit Form, Toggle State). Đây là "vũ khí" thay thế hoàn toàn việc phải tạo API Endpoint cho các tương tác nội bộ.
+
+#### 🚀 Tại sao Server Actions lại "lời" cho Performance?
+
+1.  **Giảm tải Bundle Size cho Frontend**:
+    - Toàn bộ logic kiểm tra dữ liệu (Validation với Zod/Joi), logic tính toán phức tạp, và các thư viện hỗ trợ mapping đều nằm ở Server.
+    - Trình duyệt chỉ gửi nhận dữ liệu thô, không cần tải về các bộ logic xử lý cồng kềnh.
+2.  **Mapping & Transformation (BFF Power)**:
+    - **Input Mapping**: Server Action nhận `FormData` từ UI, tự động convert/clean dữ liệu trước khi gọi sang Backend chính (Java/Go).
+    - **Output Mapping**: Khi Backend chính trả về một DTO khổng lồ (nhiều field dư thừa), Server Action sẽ lọc (filter) và map lại thành một Entity tinh gọn trước khi trả về cho UI.
+3.  **Type-safe Tuyệt đối**: Chia sẻ chung các Interface/Type giữa Client và Server. Sửa một field ở Server Action, Client sẽ báo lỗi ngay lập tức nếu chưa cập nhật.
+
+<FlowViewer
+  title="Server Action Interaction Flow"
+  height={450}
+  initialNodes={[
+    {
+      id: '1',
+      type: 'custom',
+      position: { x: 50, y: 150 },
+      data: { label: '🖱️ UI (Form/Button)' },
+    },
+    {
+      id: '2',
+      type: 'custom',
+      position: { x: 350, y: 150 },
+      data: { label: '⚡ Server Action (UseCase)' },
+    },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '🏢 Repository' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '⚙️ Main Backend' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) Submit Raw Data',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-top',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(2) Mapping & Call Repo',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-top',
+      target: '4',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(3) API Call',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-bottom',
+      label: '(4) Return Large DTO',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e5',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(5) Return Clean Entity',
+      style: { stroke: '#3b82f6' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e6',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      animated: true,
+      label: '(6) Update Result/State',
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+### 🔵 API Routes / Route Handlers (Lớp Tích hợp - Integration)
+
+**CHỈ DÙNG** API Routes cho các trường hợp:
+
+1. **Webhooks**: Khi Stripe, GitHub... cần gửi dữ liệu về một URL cố định.
+2. **Public API**: Khi anh muốn cung cấp dữ liệu cho Mobile App hoặc bên thứ 3.
+3. **Streaming/Binary**: Trả về file PDF, CSV, hoặc streaming nội dung AI (OpenAI).
+
+> [!WARNING]
+> **Đừng bao giờ** tạo một API Route `/api/todos` rồi lại dùng `fetch('/api/todos')` ngay trong một trang của Next.js. Hãy gọi trực tiếp từ Repository trong Server Component!
+
+---
+
+## 4. Tổng kết: Tại sao anh "lời" khi dùng Next.js?
+
+| Tính năng       | React (SPA) + Backend                | Next.js (BFF) + Backend              |
+| :-------------- | :----------------------------------- | :----------------------------------- |
+| **First Paint** | Chậm (đợi JS tải & fetch API)        | **Cực nhanh** (HTML có sẵn data)     |
+| **SEO**         | Khó khăn (Client-side rendering)     | **Perfect** (Mặc định)               |
+| **Bảo mật**     | Lộ Token/API Endpoint                | **An toàn** (Ẩn sau Server)          |
+| **Latency**     | Cao (nhiều round-trip Client-Server) | **Thấp** (Server-to-Server gộp data) |
+
+Next.js không thay thế Backend của anh, nó giúp Backend của anh **tỏa sáng** hơn trên trình duyệt của người dùng.

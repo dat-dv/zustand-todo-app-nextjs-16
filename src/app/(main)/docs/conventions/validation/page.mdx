@@ -1,0 +1,74 @@
+# Validation & Forms
+
+Dự án dùng **Zod** cho logic kiểm tra và **React Hook Form** để quản lý UI.
+
+---
+
+## 1. Định nghĩa Zod Schema
+
+Mọi input từ người dùng đều phải đi qua chốt chặn Zod:
+
+```typescript
+// todo.schema.ts
+export const todoSchema = z.object({
+  title: z.string().trim().min(1, 'Tiều đề không được để trống'),
+});
+export type TTodoInput = z.infer<typeof todoSchema>;
+```
+
+---
+
+## 2. Isolated Rendering (Dùng FormProvider)
+
+Để Component Nút bấm tự quản lý render mà không cần truyền `control` loằng ngoằng, anh bọc Form bằng **FormProvider**. Đây là cách tối ưu nhất cho Performance.
+
+### Cách 1: Tạo Nút Submit (Tự lấy state từ Context)
+
+Nút này nằm sâu trong cây Component, nó tự "lắng nghe" Form State qua `useFormState`.
+
+```tsx
+// SubmitButton.tsx
+function SubmitButton() {
+  const { isDirty, isValid, isSubmitting } = useFormState();
+  return <button disabled={!isDirty || !isValid || isSubmitting}>Lưu</button>;
+}
+
+<FormProvider {...methods}>
+  <FormInput name="email" label="Email" placeholder="name@example.com" type="email" />
+  <FormInput name="password" label="Password" placeholder="••••••••" type="password" />
+  <SubmitButton />
+</FormProvider>;
+```
+
+---
+
+## 3. Nâng cao: FormListenerDirty (Render Prop Pattern)
+
+Dùng khi anh muốn theo dõi **isDirty** để làm các tác vụ như: Hiện popup xác nhận khi thoát trang, đổi màu nền Form, v.v.
+
+### Tại sao dùng cái này?
+
+Nó cô lập việc lắng nghe State của Form vào một cái Wrapper nhỏ, giúp các phần khác của Form không bị re-render vô ích.
+
+```tsx
+// form-listener-dirty.tsx
+const FormListenerDirty = ({ children }) => {
+  const { isDirty } = useFormState(); // Subscribe state từ Context
+  return <>{children(isDirty)}</>;
+};
+
+// Sử dụng trong TodoForm.tsx
+<FormProvider {...methods}>
+  <FormInput name="email" label="Email" placeholder="name@example.com" type="email" />
+  <FormInput name="password" label="Password" placeholder="••••••••" type="password" />
+  <FormListenerDirty>{(isDirty) => <Button disabled={!isDirty}>Sign In</Button>}</FormListenerDirty>
+</FormProvider>;
+```
+
+---
+
+## 4. Tại sao cách này "Đỉnh" nhất?
+
+- **Zero Drillings**: Không cần truyền props `control` qua nhiều lớp Component.
+- **Isolated Performance**: Chỉ có khối UI nằm trong `FormListenerDirty` bị render lại, Form chính đứng yên.
+- **Dễ bảo trì**: Anh có thể vứt cái Listener này ở bất kỳ đâu trong Form mà không ảnh hưởng đến Logic chính.

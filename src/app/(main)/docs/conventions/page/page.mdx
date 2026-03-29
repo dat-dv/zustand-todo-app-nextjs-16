@@ -1,0 +1,75 @@
+# Page Layer
+
+Điểm bắt đầu của một tuyến đường (Route).
+
+---
+
+## Trách nhiệm
+
+- **Server Component**: Fetch data trực tiếp từ DB/Service (async).
+- **SEO**: Định nghĩa Title/Description qua `Metadata`.
+- **Hydration**: Truyền data từ Page xuống `Provider` để hydrate Store (chống Flicker UI).
+
+---
+
+## Page Flow (SSR Hydration)
+
+<FlowViewer
+  title="Page Hydration Flow"
+  height={300}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 75 }, data: { label: '🌐 Browser' } },
+    { id: '2', type: 'custom', position: { x: 350, y: 75 }, data: { label: '🖥️ Next.js Page' } },
+    { id: '3', type: 'custom', position: { x: 650, y: 75 }, data: { label: '⚡ UseCase -> DB' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 75 }, data: { label: '📦 StoreProvider' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      target: '2',
+      animated: true,
+      label: '(1) Request',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      target: '3',
+      animated: true,
+      label: '(2) fetch data',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      target: '2',
+      label: '(3) Data Result',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '2',
+      target: '4',
+      animated: true,
+      label: '(4) Hydrate Store',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e5',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      label: '(5) HTML Response',
+      style: { stroke: '#3b82f6' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## Ghi chú
+
+- Tuyệt đối không dùng `useEffect` để fetch data lần đầu (vì làm UI bị nháy/trắng trang).

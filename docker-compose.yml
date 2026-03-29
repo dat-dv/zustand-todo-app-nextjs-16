@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      # Mount a directory for persistent data
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      # Database file path inside the container
+      - SQLITE_DB_PATH=/app/data/sqlite.db
+      - NODE_ENV=production
+      # Lấy trực tiếp từ file .env nạp ở trên
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always

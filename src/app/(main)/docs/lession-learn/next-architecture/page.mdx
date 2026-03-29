@@ -1,0 +1,282 @@
+# Kiến trúc Next.js (Modern vs Legacy)
+
+Làm thế nào để fetch dữ liệu trên Server chuẩn nhất cho Next.js 16?
+
+---
+
+## 1. Modern: Server Functions & Direct Access (NÊN DÙNG)
+
+Đây là "vũ khí" mạnh nhất của Next.js 16 (App Router).
+
+### Tại sao nên dùng?
+
+- **Tốc độ vật lý**: Dữ liệu đi thẳng từ DB vào Entity, không qua tầng HTTP nội bộ.
+- **Bảo mật**: Logic truy vấn DB hoặc API Keys chì nằm ở Server.
+
+---
+
+### 📥 1.1 Triển khai Repository (Phần lõi)
+
+Dù là DB hay gọi Server khác, chúng ta đều làm trực tiếp tại lớp Infrastructure này:
+
+#### Case 1: Thao tác thẳng Database (Drizzle/SQLite)
+
+```tsx
+// src/infrastructure/todo/todo.repository.ts
+export class TodoRepository {
+  async findAll() {
+    // 🚀 Truy cập thẳng DB, không có network latency
+    return await db.select().from(todosTable);
+  }
+}
+```
+
+#### Case 2: Gọi Server khác (External API)
+
+```tsx
+// src/infrastructure/todo/todo-external.repository.ts
+export class TodoExternalRepository {
+  async findAll() {
+    // 🌐 Gọi trực tiếp microservices bên ngoài từ môi trường Server
+    const res = await axios.get('https://api.partner.com/todos');
+    return res.data;
+  }
+}
+```
+
+---
+
+### 🚀 1.2 Sử dụng tại Server Page
+
+Server Page chỉ việc gọi hàm từ **UseCase**, sạch tinh tươm và hiệu năng cao nhất.
+
+```tsx
+// src/app/(main)/todo/page.tsx
+export default async function TodoPage() {
+  // Lấy data qua UseCase (Page -> UseCase -> Repo)
+  // Sạch tinh tươm và đúng chuẩn Layer nghiệp vụ
+  const data = await findAllTodosUseCase.execute();
+
+  return (
+    <TodoProvider initialData={data}>
+      <TodoView />
+    </TodoProvider>
+  );
+}
+```
+
+<FlowViewer
+  title="Modern Architecture (Trực tiếp & Mượt mà)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🌐 Browser' } },
+    {
+      id: '2',
+      type: 'custom',
+      position: { x: 350, y: 150 },
+      data: { label: '🖥️ Page -> UseCase' },
+    },
+    { id: '3', type: 'custom', position: { x: 650, y: 150 }, data: { label: '🏢 Repository' } },
+    { id: '4', type: 'custom', position: { x: 950, y: 150 }, data: { label: '🗄️ Database / API' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) Request',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-top',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(2) useCase.execute()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-top',
+      target: '4',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(3) repo.findAll()',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-bottom',
+      label: '(4) Flow DB',
+      style: { stroke: '#34d399' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e5',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(5) Return Entity',
+      style: { stroke: '#34d399' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e6',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      label: '(6) HTML Response',
+      style: { stroke: '#3b82f6', strokeDasharray: '5,5' },
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## 2. Legacy: Truy cập qua API Route (KHÔNG NÊN DÙNG)
+
+Lỗi phổ biến là tự tạo ra một cái API nội bộ (`app/api/todos/route.ts`) rồi lại tự dùng `fetch` để gọi vào chính nó.
+
+### Tại sao gọi là Legacy?
+
+- **4 Round-Trips**: Request đi lòng vòng qua nhiều cổng HTTP nội bộ làm tốn tài nguyên.
+- **Rườm rà**: Phải forward Cookie bằng tay.
+
+```tsx
+// 🐢 Ví dụ Legacy (Tệ - Đừng làm theo!)
+export default async function BadPage() {
+  const res = await fetch('https://my-app.com/api/todos', {
+    headers: { cookie: cookies().toString() },
+  });
+  const data = await res.json();
+  return <TodoView data={data} />;
+}
+```
+
+<FlowViewer
+  title="Legacy Architecture (Nhiều tầng trung gian)"
+  height={450}
+  initialNodes={[
+    { id: '1', type: 'custom', position: { x: 50, y: 150 }, data: { label: '🌐 Browser' } },
+    { id: '2', type: 'custom', position: { x: 300, y: 150 }, data: { label: '🖥️ Server' } },
+    { id: '3', type: 'custom', position: { x: 550, y: 150 }, data: { label: '🔌 API Route' } },
+    { id: '4', type: 'custom', position: { x: 800, y: 150 }, data: { label: '🗄️ Database' } },
+  ]}
+  initialEdges={[
+    {
+      id: 'e1',
+      source: '1',
+      sourceHandle: 'source-top',
+      target: '2',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(1) Request',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e2',
+      source: '2',
+      sourceHandle: 'source-top',
+      target: '3',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(2) fetch API',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e3',
+      source: '3',
+      sourceHandle: 'source-top',
+      target: '4',
+      targetHandle: 'target-top',
+      animated: true,
+      label: '(3) call DB',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e4',
+      source: '4',
+      sourceHandle: 'source-bottom',
+      target: '3',
+      targetHandle: 'target-bottom',
+      label: '(4) Raw Data',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e5',
+      source: '3',
+      sourceHandle: 'source-bottom',
+      target: '2',
+      targetHandle: 'target-bottom',
+      label: '(5) JSON API',
+      data: { labelStyle: { color: '#fff' } },
+    },
+    {
+      id: 'e6',
+      source: '2',
+      sourceHandle: 'source-bottom',
+      target: '1',
+      targetHandle: 'target-bottom',
+      label: '(6) HTML SSR',
+      data: { labelStyle: { color: '#fff' } },
+    },
+  ]}
+/>
+
+---
+
+## 3. Server Actions vs API Routes (Bản chất & Thực tế)
+
+Đừng coi Server Actions chỉ là "POST API". Hãy phân biệt dựa trên **Bản chất tầng (Layer)** của chúng.
+
+### 🟢 3.1 Server Actions (Interaction Layer)
+
+Bản chất là một **Remote Function Call** từ Client -> Server.
+
+- **🔥 Thực tế**: Nó dùng POST là "implementation detail" của Next.js (để bảo mật), nhưng về mặt ngữ nghĩa no là gọi hàm trực tiếp.
+- **✅ Có thể dùng**:
+  - **Mutations**: Form Submit, Create/Update/Delete dữ liệu.
+  - **User-triggered fetch**: Các tác vụ lấy data do user chủ động (Search, Filter, Load more, Dependent data).
+- **⚠️ Tại sao không dùng Server Action để load data ban đầu (Initial Load)?**
+  - **Caching**: HTTP GET được trình duyệt/CDN cache mạnh. POST (Action) không được cache, gây lãng phí tài nguyên Server.
+  - **SEO & First Paint**: Server Components render sẵn HTML. Action chạy ở Client, gây chậm (Flicker) và Google Bot không thấy dữ liệu.
+  - **Waterfall**: Action phải đợi Client mount xong JS mới gọi được, làm chậm tiến độ hiển thị cực kỳ nhiều.
+  - **Payload**: Request Action nặng nề hơn (Headers, Action ID) so với một cú fetch GET tinh gọn.
+- **🛡️ Bảo mật**: Cơ chế protect (CSRF) tốt nhưng vẫn phụ thuộc Cookies/Origin, không phải "auto safe 100%" (Vẫn phải check Authorization bên trong hàm).
+
+---
+
+### 🔵 3.2 API Routes / Route Handlers (Integration Layer)
+
+Dành cho mục đích "Cổng kết nối" và các luồng REST truyền thống.
+
+- **Tại sao vẫn tồn tại?**:
+  - **Public API**: Cung cấp API cho bên thứ 3 (Mobile App, iOS/Android) hoặc bên thứ 3.
+  - **Webhooks**: Stripe, PayPal, GitHub... cần một URL cố định để gửi thông báo.
+  - **Custom Streams**: Trả về dữ liệu thô, Binary, file PDF, CSV hoặc streaming cho AI.
+  - **Đa phương thức**: Hỗ trợ đầy đủ GET, PUT, DELETE, PATCH...
+
+---
+
+## 4. Nguyên tắc "Sống còn" (The 3 Layers Mindset)
+
+Để chọn đúng "vũ khí", hãy xác định xem anh đang ở Layer nào:
+
+- 🏗️ **Data Layer (Hiển thị SSR/SEO)**: Dùng **Server Component** (Direct DB Access).
+  - _Lợi:_ Tránh extra network hop, tận dụng Cache Next.js.
+- ⚡ **Interaction Layer (User tương tác)**: Dùng **Server Action**.
+  - _Lợi:_ Type-safe, revalidation mượt, không tốn công quản lý Endpoint API.
+- 📱 **Integration Layer (Mobile/Webhook)**: Dùng **API Route**.
+  - _Lợi:_ Tiêu chuẩn REST, ổn định cho môi trường bên ngoài.

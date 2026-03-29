@@ -1,0 +1,41 @@
+# Authentication & Security
+
+Bảo mật người dùng bằng **JWT (JOSE)** và **Service-side Guard**.
+
+---
+
+## 1. Cơ chế JWT
+
+- **Đăng nhập**: Server tạo JWT chứa `userId`, lưu vào **HTTP-only cookie**.
+- **Xác thực**: Next.js API đọc cookie này trước mọi request để lấy ra `userId` thật.
+
+---
+
+## 2. Auth Guard Pattern
+
+Mọi API route đều phải check quyền ở đầu hàm hoặc qua Middleware:
+
+```typescript
+// app/api/[module]/route.ts
+const userId = await authService.getAuthenticatedUserId();
+if (!userId) return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+```
+
+---
+
+## 3. Quy tắc bảo mật
+
+- **Mật khẩu**: Tuyệt đối không lưu text thuần. Luôn dùng `bcrypt.hash(password, 10)`.
+- **Dữ liệu**: Mọi query DB phải kèm theo `WHERE user_id = userId`.
+- **Cookie**: Phải có cờ `HttpOnly`, `Secure` và `SameSite: Strict` để chống tấn công XSS/CSRF.
+
+---
+
+## Login Flow
+
+```bash
+1. User nhập user/pass.
+2. Hook gọi CreateSessionUseCase.
+3. Server verify pass → Set Cookie JWT → Trả về success.
+4. Hook cập nhật Store 'user' → Redirect qua Dashboard.
+```
