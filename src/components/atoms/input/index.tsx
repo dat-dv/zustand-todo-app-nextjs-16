@@ -51,7 +51,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-describedby={error ? `${id}-error` : undefined}
             maxLength={maxCount}
             {...rest}
-            type={isPassword && showPassword ? 'text' : rest.type}
+            type={isPassword && showPassword ? 'text' : rest.type || 'text'}
           />
 
           <div className="text-[11px] absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none select-none">

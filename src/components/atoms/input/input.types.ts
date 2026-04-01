@@ -1,7 +1,6 @@
 export type InputVariant = 'outline' | 'underline' | 'none';
 
-export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'id'> {
-  id: string;
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   variant?: InputVariant;

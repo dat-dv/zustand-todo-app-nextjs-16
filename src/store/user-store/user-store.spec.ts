@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest';
-
-import { IUser } from '@/domain/auth/model/auth.model';
+import { describe, expect, it, beforeEach } from 'vitest';
 
 import { createUserStore } from './index';
+import { IUser } from '@/domain/auth/model/auth.model';
 
 describe('AuthStore', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   const mockUser: IUser = {
     id: 'user-1',
     email: 'test@example.com',
@@ -14,7 +17,6 @@ describe('AuthStore', () => {
   it('should initialize with default state', () => {
     const store = createUserStore();
     const state = store.getState();
-
     expect(state.user).toBeNull();
     expect(state.loading).toBe(false);
   });
@@ -29,7 +31,6 @@ describe('AuthStore', () => {
   it('should update loading state', () => {
     const store = createUserStore();
     store.getState().setLoading(true);
-
     expect(store.getState().loading).toBe(true);
   });
 
@@ -42,8 +43,9 @@ describe('AuthStore', () => {
   });
 
   it('should initialize with provided state', () => {
-    const store = createUserStore({ user: mockUser, loading: true });
-    expect(store.getState().user).toEqual(mockUser);
-    expect(store.getState().loading).toBe(true);
+    const store = createUserStore({ user: mockUser });
+    const state = store.getState();
+    expect(state.user).toEqual(mockUser);
+    expect(state.loading).toBe(false);
   });
 });

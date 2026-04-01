@@ -14,7 +14,7 @@ export const MermaidViewer = () => {
         <h3 className="text-lg font-black tracking-tight text-amber-500 uppercase">
           Mermaid is Deprecated
         </h3>
-        <p className="max-w-md text-sm text-amber-500/70 leading-relaxed">
+        <div className="max-w-md text-sm text-amber-500/70 leading-relaxed">
           <p> Static Mermaid diagrams are no longer supported.</p>
           <p>
             Please migrate this diagram to the
@@ -22,7 +22,7 @@ export const MermaidViewer = () => {
             component
             <br /> for a high-fidelity interactive experience.
           </p>
-        </p>
+        </div>
       </div>
 
       <div className="mt-4 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/10 text-[10px] font-mono text-amber-500/60 uppercase tracking-widest">

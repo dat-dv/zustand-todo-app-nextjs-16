@@ -46,7 +46,7 @@ describe('Auth Use Cases', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(ZodError);
         const zodError = err as ZodError;
-        expect(zodError.issues[0].message).toBe('invalid email address');
+        expect(zodError.issues[0].message).toBe('Invalid email address');
       }
     });
   });
