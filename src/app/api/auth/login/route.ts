@@ -5,11 +5,11 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import { ApiResponse } from '@/app/api/types/response.types';
+import { ENV_SERVER } from '@/config/server.config';
 import { AUTH_TOKEN_KEY } from '@/constants/auth.constanst';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { IUserResponse } from '@/domain/auth/infrastructure/auth.response';
-import { ENV_SERVER } from '@/config/server.config';
 
 const JWT_SECRET = new TextEncoder().encode(ENV_SERVER.JWT_SECRET);
 

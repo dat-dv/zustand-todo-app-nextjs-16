@@ -10,14 +10,16 @@ const forwardClientRequest = async <T>(
   options?: IRequestOptions,
 ): Promise<T> => {
   const isServer = typeof window === 'undefined';
-  const headers: Record<string, string> = { ...(options?.headers as any) };
+  const headers: Record<string, string> = {
+    ...((options?.headers as Record<string, string>) || {}),
+  };
 
   if (isServer) {
     try {
       const { cookies } = await import('next/headers');
       const cookieStore = await cookies();
       headers['Cookie'] = cookieStore.toString();
-    } catch (e) {
+    } catch {
       // Not in a request context, skip cookie forwarding
     }
   }

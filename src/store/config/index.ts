@@ -1,9 +1,9 @@
 import { StateCreator } from 'zustand';
-import { createStore } from 'zustand/vanilla';
 import { devtools, persist } from 'zustand/middleware';
+import { createStore } from 'zustand/vanilla';
 
-import { CONFIG_STORE_KEY, ETheme } from '@/constants/theme.constanst';
 import { PUBLIC_ENV } from '@/config/public.env.config';
+import { CONFIG_STORE_KEY, ETheme } from '@/constants/theme.constanst';
 
 import { ConfigState, ConfigStore } from './config.types';
 

@@ -55,35 +55,44 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       // Block code handled by pre
       return <code className={className}>{children}</code>;
     },
-    pre: ({ children }: any) => {
+    pre: ({ children }: React.ComponentPropsWithoutRef<'pre'>) => {
       // Robust text extraction helper
-      const getCodeString = (node: any): string => {
+      const getCodeString = (node: React.ReactNode): string => {
         if (typeof node === 'string') return node;
-        if (node?.props?.children) return getCodeString(node.props.children);
+        if (React.isValidElement(node)) {
+          const props = node.props as { children?: React.ReactNode };
+          return getCodeString(props.children);
+        }
         if (Array.isArray(node)) return node.map(getCodeString).join('');
         return '';
       };
 
       // Find the code element: checks both primitive 'code' and custom components with language classes
-      const findCodeElement = (node: any): any => {
-        if (
-          React.isValidElement(node) &&
-          (node.type === 'code' || (node.props as any)?.className?.startsWith('language-'))
-        )
-          return node;
-        if (node?.props?.children) {
-          if (Array.isArray(node.props.children)) {
-            return node.props.children.map(findCodeElement).find(Boolean);
+      const findCodeElement = (node: React.ReactNode): React.ReactElement | null => {
+        if (React.isValidElement(node)) {
+          const props = node.props as { className?: string; children?: React.ReactNode };
+          if (node.type === 'code' || props.className?.startsWith('language-')) {
+            return node as React.ReactElement;
           }
-          return findCodeElement(node.props.children);
+          if (props.children) {
+            if (Array.isArray(props.children)) {
+              return (
+                (props.children.map(findCodeElement).find(Boolean) as React.ReactElement) || null
+              );
+            }
+            return findCodeElement(props.children);
+          }
         }
         return null;
       };
 
       const codeElement = findCodeElement(children);
 
-      if (codeElement) {
-        const { children: codeContent, className } = codeElement.props;
+      if (codeElement && React.isValidElement(codeElement)) {
+        const { children: codeContent, className } = codeElement.props as {
+          children?: React.ReactNode;
+          className?: string;
+        };
 
         // Ensure we only process if it's a language block AND not mermaid
         if (className?.startsWith('language-') && className !== 'language-mermaid') {

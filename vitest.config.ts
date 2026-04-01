@@ -1,28 +1,35 @@
-import { defineConfig } from 'vitest/config';
+// vitest.config.ts
 import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     tsconfigPaths: true,
   },
-  define: {
-    'process.env.NEXT_PUBLIC_SITE_URL': JSON.stringify('http://localhost:3000'),
-    'process.env.NEXT_PUBLIC_API_URL': JSON.stringify('http://localhost:3000/api'),
-    'process.env.NEXT_PUBLIC_IS_DEBUG': JSON.stringify('false'),
-    'process.env.NODE_ENV': JSON.stringify('test'),
-  },
+  define: {},
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'jsdom', // default cho unit/component test
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     setupFiles: 'vitest.setup.ts',
-    // browser mode (chỉ dùng khi cần)
+    // ---- Browser mode với Playwright ----
     browser: {
-      enabled: false,
-      provider: playwright(),
-      instances: [{ browser: 'chromium' }],
+      enabled: true, // bật browser
+      provider: playwright({
+        launchOptions: {
+          headless: true, // chạy background
+          slowMo: 50, // chậm 50ms mỗi action để dễ debug
+        },
+        actionTimeout: 5_000,
+        persistentContext: true, // lưu cookies, localStorage giữa các file test
+      }),
+      instances: [
+        { browser: 'chromium' }, // instance Chromium
+        // { browser: 'firefox' }, // instance Firefox
+        // { browser: 'webkit' }, // instance Webkit (Safari)
+      ],
     },
   },
 });

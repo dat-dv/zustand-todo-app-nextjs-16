@@ -1,9 +1,9 @@
 import { jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from 'next/server';
 
+import { ENV_SERVER } from '@/config/server.config';
 import { AUTH_TOKEN_KEY } from '@/constants/auth.constanst';
 import { APP_ROUTES, CALLBACK_URL_KEY } from '@/constants/routes';
-import { ENV_SERVER } from '@/config/server.config';
-import { NextRequest, NextResponse } from 'next/server';
 
 const JWT_SECRET = new TextEncoder().encode(ENV_SERVER.JWT_SECRET);
 

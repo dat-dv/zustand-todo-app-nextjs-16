@@ -16,6 +16,7 @@ import {
   MarkerType,
   MiniMap,
   Node,
+  NodeProps,
   Panel,
   Position,
   ReactFlow,
@@ -175,7 +176,7 @@ const BezierEdge = ({
 };
 
 // ─── Custom Node ──────────────────────────────────────────────────────────────
-export const CustomNode = ({ id: _id, data, selected }: any) => {
+export const CustomNode = ({ data, selected }: NodeProps) => {
   const hCls =
     'w-3 h-3 !bg-primary border-2 border-white shadow-lg opacity-0 group-hover:opacity-100 transition-all';
 
@@ -251,7 +252,7 @@ export const CustomNode = ({ id: _id, data, selected }: any) => {
 
         <div className="min-h-[66px] min-w-[80px] flex flex-col items-center justify-center gap-2 relative z-10">
           <span className="text-sm font-black tracking-tight text-white drop-shadow-md uppercase">
-            {data.label}
+            {data.label as React.ReactNode}
           </span>
         </div>
       </motion.div>
@@ -324,7 +325,7 @@ const FlowViewerInner = ({
   );
 
   const onReconnectEnd = useCallback(
-    (_: any, edge: Edge) => {
+    (_event: MouseEvent | TouchEvent, edge: Edge) => {
       if (!edgeReconnectSuccessful.current) setEdges((eds) => eds.filter((e) => e.id !== edge.id));
       edgeReconnectSuccessful.current = true;
     },
@@ -568,6 +569,7 @@ const FlowViewerInner = ({
                     '%c 🚀 MDX CONFIGURATION READY ',
                     'background: #10b981; color: white; padding: 4px; border-radius: 4px; font-weight: bold;',
                   );
+                  console.log(mdxCode);
                   console.groupEnd();
                   alert(
                     'ĐÃ LOG CODE MDX! Anh hãy vào Console (F12) để Copy nguyên đoạn mã <FlowViewer /> nhé.',

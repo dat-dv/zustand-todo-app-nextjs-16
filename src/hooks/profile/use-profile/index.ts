@@ -48,8 +48,8 @@ export const useProfile = () => {
       const updatedUser = await authUseCase.updateProfile.execute(data);
       setUser(updatedUser);
       setIsEditing(false);
-    } catch (err: any) {
-      toast.error(err.message || 'Update failed', { toastId: 'profile-error' });
+    } catch (err: unknown) {
+      toast.error((err as Error).message || 'Update failed', { toastId: 'profile-error' });
     } finally {
       setLoading(false);
     }

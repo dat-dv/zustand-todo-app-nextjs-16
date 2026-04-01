@@ -69,7 +69,7 @@ export const TodoServiceApi = {
       .set(patch)
       .where(and(eq(todos.id, todoId), eq(todos.user_id, userId)))
       .returning();
-    return (updated as ITodoResponse) || null;
+    return updated || null;
   },
 
   async delete(userId: string, todoId: string): Promise<ITodoResponse | null> {
@@ -93,6 +93,13 @@ export const TodoServiceApi = {
       .where(eq(todos.id, todoId))
       .returning();
 
-    return updated as ITodoResponse;
+    return updated;
+  },
+
+  async findById(userId: string, todoId: string): Promise<ITodoResponse | null> {
+    const todo = await db.query.todos.findFirst({
+      where: and(eq(todos.id, todoId), eq(todos.user_id, userId)),
+    });
+    return todo || null;
   },
 };

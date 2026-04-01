@@ -6,8 +6,8 @@ import { ITodoResponse } from '@/domain/todo/infrastructure/todo.response';
 
 import { AuthServiceApi } from '../../auth/auth.service';
 
-export async function PUT(
-  request: Request,
+export async function GET(
+  _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): ApiResponse<ITodoResponse> {
   try {
@@ -17,9 +17,43 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    const todo = await TodoServiceApi.findById(userId, id);
+
+    if (!todo) {
+      return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(todo);
+  } catch (error) {
+    console.error('Fetch Todo Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+): ApiResponse<ITodoResponse> {
+  try {
+    const userId = await AuthServiceApi.getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { id } = await params;
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
 
     const { id: _, user_id: __, ...updateData } = body;
+
+    // Skip update if no data provided to avoid Drizzle error
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No data to update' }, { status: 400 });
+    }
+
     const updatedTodo = await TodoServiceApi.update(userId, id, updateData);
 
     if (!updatedTodo) {

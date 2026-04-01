@@ -8,8 +8,8 @@ try {
   // 1. Manually add the column to bypass drizzle-kit crash
   sqlite.exec(`ALTER TABLE todos ADD COLUMN "position" integer DEFAULT 0`);
   console.log('Added position column successfully.');
-} catch (err: any) {
-  if (!err.message.includes('duplicate column name')) {
+} catch (err: unknown) {
+  if (err instanceof Error && !err.message.includes('duplicate column name')) {
     throw err;
   }
 }

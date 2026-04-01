@@ -1,13 +1,13 @@
 'use client';
 
+import { motion } from 'framer-motion';
+import { MaximizeIcon, XIcon } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 import Cropper, { Area, Point } from 'react-easy-crop';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MaximizeIcon, XIcon } from 'lucide-react';
 
 import Button from '@/components/atoms/button';
+
 import getCroppedImg from './get-cropped-img';
-import { cn } from '@/utils/cn';
 
 interface ImgCropperProps {
   image: string;
@@ -24,7 +24,7 @@ const ImgCropper: React.FC<ImgCropperProps> = ({
   onCancel,
   aspect = 1,
   saveLabel = 'Save changes',
-  title = 'Edit photo',
+  title: _title = 'Edit photo',
 }) => {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -51,8 +51,8 @@ const ImgCropper: React.FC<ImgCropperProps> = ({
       if (croppedImage) {
         onCropComplete(croppedImage);
       }
-    } catch (e) {
-      console.error('[AvatarCropper] Error cropping image:', e);
+    } catch {
+      // Not in a request context, skip cookie forwarding
     } finally {
       setIsCropping(false);
     }

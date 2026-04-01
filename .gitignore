@@ -13,6 +13,15 @@
 # testing
 /coverage
 
+# playwright
+/playwright-report/
+/playwright/.cache/
+/test-results/
+/blob-report/
+
+# vitest browser
+/node_modules/.cache/vitest-playwright-user-data/
+
 # next.js
 /.next/
 /out/

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 
 import { ProfileView } from '@/components/organisms/profile-view';
-import { useAuthStore } from '@/hooks/auth/use-auth-store';
 
 export const metadata: Metadata = {
   title: 'Profile',

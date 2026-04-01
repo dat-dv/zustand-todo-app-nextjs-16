@@ -2,8 +2,8 @@ import { StateCreator } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { createStore } from 'zustand/vanilla';
 
-import { ETodoFilter } from '@/domain/todo/model/todo.model';
 import { PUBLIC_ENV } from '@/config/public.env.config';
+import { ETodoFilter } from '@/domain/todo/model/todo.model';
 
 import { TodoStore, TodoStoreState } from './todo-store.types';
 

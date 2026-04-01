@@ -1,22 +1,29 @@
-const Database = require('better-sqlite3');
-const { drizzle } = require('drizzle-orm/better-sqlite3');
-const { migrate } = require('drizzle-orm/better-sqlite3/migrator');
-const path = require('path');
-const fs = require('fs');
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || 'sqlite.db';
 const MIGRATIONS_FOLDER = path.join(__dirname, '../drizzle');
 
-// Create directory if not exists
-const dbDir = path.dirname(SQLITE_DB_PATH);
-if (dbDir !== '.' && !fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
-}
+/**
+ * Migration execution environment
+ */
+const main = async () => {
+  // Create directory if not exists
+  const dbDir = path.dirname(SQLITE_DB_PATH);
+  if (dbDir !== '.' && !fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
 
-const sqlite = new Database(SQLITE_DB_PATH);
-const db = drizzle(sqlite);
+  const sqlite = new Database(SQLITE_DB_PATH);
+  const db = drizzle(sqlite);
 
-async function main() {
   console.log('>>> Standard Migration Protocol Initialized...');
   console.log(`>>> Target DB: ${SQLITE_DB_PATH}`);
 
@@ -33,6 +40,6 @@ async function main() {
     console.error('>>> Migration Error:', err);
     process.exit(1);
   }
-}
+};
 
 main();

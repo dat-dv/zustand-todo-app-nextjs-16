@@ -1,8 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
-
-import { itemVariants } from '@/components/atoms/animate';
+import { AnimationItem } from '@/components/atoms/animate';
 import { BoltIcon } from '@/components/atoms/icons';
 import { useAppConfig } from '@/hooks/config/use-config-store';
 
@@ -11,10 +9,7 @@ export const HomeLiveStateMonitor = () => {
   const isDarkMode = useAppConfig((state) => state.isDarkMode);
 
   return (
-    <motion.section
-      variants={itemVariants}
-      className="glass p-6 sm:p-8 rounded-3xl border border-content/10 w-full"
-    >
+    <AnimationItem className="glass p-6 sm:p-8 rounded-3xl border border-content/10 w-full">
       <div className="flex flex-col gap-6 items-center">
         <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center animate-pulse">
           <BoltIcon />
@@ -34,6 +29,6 @@ export const HomeLiveStateMonitor = () => {
 
         <p className="text-xs opacity-40 italic">Experience seamless real-time synchronization.</p>
       </div>
-    </motion.section>
+    </AnimationItem>
   );
 };

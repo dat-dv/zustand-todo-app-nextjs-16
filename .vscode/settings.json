@@ -1,0 +1,36 @@
+{
+  "files.autoSave": "onFocusChange",
+  // Format code on save, using the ESLint formatter
+  "editor.formatOnSave": true,
+  // Set the default formatter to ESLint
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // Enable ESLint
+  "eslint.enable": true,
+
+  // Set up code actions to run on save
+  "editor.codeActionsOnSave": {
+    // Run ESLint's "fix all" code action on save
+    "source.fixAll.eslint": "explicit",
+    // Disable the built-in "fix all" code action, as ESLint will handle it
+    "source.fixAll": "explicit",
+    "source.fixAll.ts": "explicit",
+    // Disable the built-in "organize imports" code action, as ESLint will handle it
+    "source.organizeImports": "never"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // Configure ESLint to validate the following languages
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "javascriptreact",
+    "typescriptreact",
+    "json",
+    "markdown"
+  ],
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "typescript.autoClosingTags": false
+}

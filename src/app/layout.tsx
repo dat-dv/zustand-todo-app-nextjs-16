@@ -4,13 +4,13 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import Script from 'next/script';
-import AppToast from '@/components/atoms/toast';
 
+import AppToast from '@/components/atoms/toast';
 import { AuthProvider } from '@/components/molecules/providers/auth-provider';
 import { ConfigProvider } from '@/components/molecules/providers/config-provider';
-import { themeScript } from '@/utils/theme-script';
-import { ENV_SERVER } from '@/config/server.config';
 import { PUBLIC_ENV } from '@/config/public.env.config';
+import { ENV_SERVER } from '@/config/server.config';
+import { themeScript } from '@/utils/theme-script';
 
 const inter = Inter({
   variable: '--font-inter',

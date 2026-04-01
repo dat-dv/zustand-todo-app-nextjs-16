@@ -43,7 +43,7 @@ export async function PUT(request: Request): ApiResponse<IUserResponse> {
       return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
     }
 
-    return NextResponse.json(updatedUser as any as IUserResponse);
+    return NextResponse.json(updatedUser);
   } catch (error) {
     console.error('Update Profile Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { forwardRef } from 'react';
 import Link from 'next/link';
+import React, { forwardRef } from 'react';
 
 import { cn } from '@/utils/cn';
 
@@ -28,7 +28,7 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
           href={href}
           className={classes}
           ref={ref as React.Ref<HTMLAnchorElement>}
-          {...(rest as any)}
+          {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
         >
           {loader}
           {children}
@@ -36,7 +36,11 @@ const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
       );
     }
 
-    const { type = 'button', disabled, ...btnRest } = rest as any;
+    const {
+      type = 'button',
+      disabled,
+      ...btnRest
+    } = rest as React.ButtonHTMLAttributes<HTMLButtonElement>;
 
     return (
       <button
