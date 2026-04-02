@@ -1,6 +1,6 @@
 # Zustand Todo App
 
-Một ứng dụng Todo được xây dựng với **Next.js 16** và **Zustand**, tập trung vào việc áp dụng kiến trúc **Clean Architecture** để đảm bảo khả năng mở rộng và dễ bảo trì.
+Một ứng dụng Todo được xây dựng với **Next.js 16** và **Zustand**, tập trung vào việc áp dụng kiến trúc **Clean Architecture** để đảm bảo khả năng mở rộng, dễ bảo trì, Đồng thời triển khai **Unit Test (Vitest)** cùng **E2E Test (Playwright)**.
 
 ## Tech Stack:
 

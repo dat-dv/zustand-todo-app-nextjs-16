@@ -3,12 +3,18 @@ import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
+if (process.loadEnvFile) {
+  process.loadEnvFile();
+}
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
     tsconfigPaths: true,
   },
-  define: {},
+  define: {
+    'process.env': process.env,
+  },
   test: {
     globals: true,
     environment: 'jsdom', // default cho unit/component test

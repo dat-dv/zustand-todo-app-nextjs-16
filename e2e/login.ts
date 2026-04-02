@@ -12,10 +12,10 @@ export async function performLogin(page: Page) {
   });
 
   await page.goto('/sign-in');
-  
+
   await page.getByLabel('Email', { exact: true }).fill(TEST_EMAIL);
   await page.getByLabel('Password', { exact: true }).fill(TEST_PASSWORD);
-  
+
   /**
    * CRITICAL SECURITY/SESSION NOTE:
    * Next.js uses HttpOnly cookies. If we call page.goto('/todo') immediately after clicking,
@@ -30,6 +30,6 @@ export async function performLogin(page: Page) {
     }),
     page.getByRole('button', { name: /sign in/i }).click(),
   ]);
-  
+
   console.log(`[E2E-Login] Successfully logged in and redirected to: ${page.url()}`);
 }
