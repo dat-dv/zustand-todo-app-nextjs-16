@@ -28,6 +28,7 @@ const UseCreateTodo = () => {
   const onSubmit = useCallback(
     async (data: CreateTodoSchema) => {
       if (isSpam) return;
+      methods.setValue('title', '');
 
       increment();
 
@@ -40,6 +41,7 @@ const UseCreateTodo = () => {
         await addTodo(data.title.trim());
         methods.reset();
       } catch {
+        methods.setValue('title', data?.title || '');
         // useTodoAction handles primary error notifications
       }
     },
