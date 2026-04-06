@@ -9,13 +9,18 @@ if [ ! -d "$DB_DIR" ]; then
   mkdir -p "$DB_DIR"
 fi
 
-# Database Automatic Initialization (As per your suggestion)
-if [ ! -f "$DB_PATH" ]; then
-  echo ">>> Database file not found at $DB_PATH. Initializing schema via drizzle-kit push..."
-  # drizzle-kit push --force ensures the schema is correctly applied to a new database
-  npx drizzle-kit push
-else
-  echo ">>> Database found at $DB_PATH. Skipping initialization."
+# Database Aggressive Initialization (Forces schema sync even if file exists)
+echo ">>> Ensuring Database Directory exists: $DB_DIR"
+mkdir -p "$DB_DIR"
+
+echo ">>> Aggressive Schema Synchronization via drizzle-kit push..."
+# drizzle-kit push is safe to run repeatedly; it ensures tables always exist.
+npx drizzle-kit push
+
+# FIX Permissions for Docker Volumes (Ensure write capacity for user nextjs)
+if [ -f "$DB_PATH" ]; then
+  echo ">>> Enforcing read/write permissions for database at $DB_PATH"
+  chmod 666 "$DB_PATH"
 fi
 
 # Start the application using standalone server.js
