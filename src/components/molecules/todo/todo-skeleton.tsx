@@ -8,14 +8,18 @@ export const TodoSkeleton = () => {
       {[1, 2, 3, 4, 5].map((i) => (
         <div
           key={i}
-          className="h-20 w-full rounded-3xl bg-white/5 border border-white/10 flex items-center px-6 gap-4"
+          className="w-full rounded-2xl bg-content/[0.03] border border-content/[0.05] flex items-center p-4 gap-4"
         >
-          <div className="h-6 w-6 rounded-lg bg-white/10 animate-pulse" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-1/3 bg-white/10 rounded animate-pulse" />
-            <div className="h-3 w-1/4 bg-white/5 rounded animate-pulse" />
+          {/* Checkbox Placeholder */}
+          <div className="h-10 w-10 rounded-full bg-content/[0.06] animate-pulse shrink-0" />
+          
+          {/* Content Placeholder */}
+          <div className="flex-1 min-w-0 space-y-2">
+            <div className="h-5 w-1/2 bg-content/[0.06] rounded-lg animate-pulse" />
           </div>
-          <div className="h-8 w-8 rounded-xl bg-white/5 animate-pulse" />
+
+          {/* Delete Button Placeholder */}
+          <div className="h-10 w-10 rounded-xl bg-content/[0.03] animate-pulse shrink-0" />
         </div>
       ))}
     </div>

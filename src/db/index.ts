@@ -11,18 +11,7 @@ import * as schema from './schema';
 
 const globalForSqlite = global as unknown as { sqlite: Database.Database | undefined };
 
-// --- 1. Centralized Database Path Resolution ---
-const getDbPath = () => {
-  const envPath = ENV_SERVER.SQLITE_DB_PATH || '/app/data/sqlite.db';
-  // Standardize: if relative, move to /app/data for persistence
-  if (envPath.startsWith('./') || !path.isAbsolute(envPath)) {
-    const fileName = path.basename(envPath);
-    return path.join('/app/data', fileName);
-  }
-  return envPath;
-};
-
-const dbPath = getDbPath();
+const dbPath = ENV_SERVER.SQLITE_DB_PATH;
 const dbDir = path.dirname(dbPath);
 
 // --- 2. Guaranteed Directory Creation ---
