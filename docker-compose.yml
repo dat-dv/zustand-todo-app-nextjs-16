@@ -1,17 +1,26 @@
 services:
-  web:
-    build: .
-    ports:
-      - '3000:3000'
-    volumes:
-      # Mount a directory for persistent data
-      - ./data:/app/data
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PORT=${PORT:-3000}
+        - NODE_ENV=${NODE_ENV:-production}
+        - JWT_SECRET=${JWT_SECRET}
+        - SQLITE_DB_PATH=${SQLITE_DB_PATH:-/app/data/sqlite.db}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+        - NEXT_PUBLIC_IS_DEBUG=${NEXT_PUBLIC_IS_DEBUG:-false}
+    container_name: zustand-todo-app
     env_file:
       - .env
-    environment:
-      # Database file path inside the container
-      - SQLITE_DB_PATH=/app/data/sqlite.db
-      - NODE_ENV=production
-      # Lấy trực tiếp từ file .env nạp ở trên
-      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - '3335:${PORT:-3000}'
+    volumes:
+      - todo-data:/app/data # Persistent volume for SQLite database
     restart: always
+    labels:
+      - 'com.portainer.webhook.name=cicd-update'
+
+volumes:
+  todo-data:

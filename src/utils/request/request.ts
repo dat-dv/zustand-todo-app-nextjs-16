@@ -24,7 +24,9 @@ const forwardClientRequest = async <T>(
     }
   }
 
-  const fullUrl = `${PUBLIC_ENV.NEXT_PUBLIC_API_URL}${url}`;
+  const baseUrl = PUBLIC_ENV.NEXT_PUBLIC_API_URL;
+
+  const fullUrl = `${baseUrl}${url}`;
 
   return requestCreator<T>({
     method,

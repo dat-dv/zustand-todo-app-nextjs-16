@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const serverEnvSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
 
-  SQLITE_DB_PATH: z.string().min(1).default('sqlite.db'),
+  SQLITE_DB_PATH: z.string().min(1).default('./data/sqlite.db'),
 
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 

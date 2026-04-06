@@ -17,5 +17,8 @@ node_modules
 .dockerignore
 sqlite.db
 sqlite.db-journal
+*.db
+*.db-*
+/data/
 *.tsbuildinfo
 

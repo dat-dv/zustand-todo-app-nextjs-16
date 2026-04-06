@@ -13,25 +13,35 @@ Một ứng dụng Todo được xây dựng với **Next.js 16** và **Zustand*
 - `src/store`: Quản lý trạng thái ứng dụng phía client qua các Zustand stores.
 - `src/components`: Hệ thống UI component được thiết kế theo nguyên lý Atomic Design.
 
-## Usage:
+## 🚀 Hướng dẫn cài đặt (Usage):
 
-1. **Install dependencies:**
+1. **Cài đặt dependencies:**
 
    ```bash
    npm install
+   # Quan trọng: Biên dịch lại thư viện native đúng bản Node
+   npm rebuild better-sqlite3
    ```
 
 2. **Setup Database (Drizzle + SQLite):**
 
    ```bash
-   npm run db:generate
-   npm run db:migrate
-   # Hoặc dùng: npm run db:push
+   cp .env.example .env
+   # Ghi chú: Nếu chạy local (không Docker), hãy sửa SQLITE_DB_PATH=./data/sqlite.db trong file .env
    ```
 
-3. **Run Development:**
+3. **Khởi tạo Database (Drizzle + SQLite):**
+
+   ```bash
+   # Chạy migration để tạo các bảng dữ liệu
+   npm run db:migrate
+
+   # Hoặc `npm run db:push` để đồng bộ nhanh Schema
+   ```
+
+4. **Chạy ứng dụng:**
    ```bash
    npm run dev
    ```
 
-Dữ liệu sẽ được lưu trữ trực tiếp trong file `sqlite.db` tại thư mục gốc.
+Dữ liệu sẽ được lưu trữ trực tiếp trong file `./data/sqlite.db` tại thư mục gốc.

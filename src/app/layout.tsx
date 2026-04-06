@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
   description:
     'Manage your tasks with elegance and efficiency. A high-performance todo application with real-time focus.',
-  metadataBase: new URL(PUBLIC_ENV.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: PUBLIC_ENV.NEXT_PUBLIC_SITE_URL,
   openGraph: {
     type: 'website',
     locale: 'en_US',

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || 'sqlite.db';
+const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || './data/sqlite.db';
 const MIGRATIONS_FOLDER = path.join(__dirname, '../drizzle');
 
 /**

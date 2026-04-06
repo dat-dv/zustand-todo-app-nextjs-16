@@ -1,14 +1,13 @@
 import { z } from 'zod';
 
 export const publicEnvSchema = z.object({
-  NEXT_PUBLIC_SITE_URL: z.string().url(),
-  NEXT_PUBLIC_API_URL: z.string().url(),
+  NEXT_PUBLIC_SITE_URL: z.string(),
+  NEXT_PUBLIC_API_URL: z.string(),
   NEXT_PUBLIC_IS_DEBUG: z
     .string()
     .optional()
     .default('false')
     .transform((v) => v === 'true'),
-
   // NODE_ENV luôn có sẵn ở client
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
