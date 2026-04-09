@@ -11,23 +11,23 @@ import { IAuthStore } from '@/store/user-store/user-store.type';
 
 import { HomeView } from './index';
 
-vi.mock('@/hooks/config/use-config', () => ({
-  useConfig: vi.fn().mockReturnValue({
-    config: { siteName: 'Zustand Todo', siteDescription: 'Premium Todo App' },
-  }),
-}));
-
-vi.mock('@/hooks/config/use-config-store', () => ({
-  useAppConfig: vi.fn((selector) =>
-    selector({
-      theme: 'light',
-      isDarkMode: false,
+describe('HomeView Organism', () => {
+  vi.mock('@/hooks/config/use-config', () => ({
+    useConfig: vi.fn().mockReturnValue({
       config: { siteName: 'Zustand Todo', siteDescription: 'Premium Todo App' },
     }),
-  ),
-}));
+  }));
 
-describe('HomeView Organism', () => {
+  vi.mock('@/hooks/config/use-config-store', () => ({
+    useAppConfig: vi.fn((selector) =>
+      selector({
+        theme: 'light',
+        isDarkMode: false,
+        config: { siteName: 'Zustand Todo', siteDescription: 'Premium Todo App' },
+      }),
+    ),
+  }));
+
   const mockAuthStore: IAuthStore = {
     user: null,
     setUser: vi.fn(),

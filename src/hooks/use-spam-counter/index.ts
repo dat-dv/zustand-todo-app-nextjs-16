@@ -23,7 +23,7 @@ export const useSpamCounter = ({ maxCount = 3, interval = 1000 }: UseSpamCounter
 
   return {
     count,
-    isSpam: count > maxCount,
+    isSpam: count >= maxCount,
     increment,
   };
 };

@@ -58,6 +58,7 @@ export const useTodoAction = () => {
       } catch (err) {
         removeTodo(tempId);
         toast.error(err instanceof Error ? err.message : 'Add failed');
+        throw err; // Ném lỗi để UseCreateTodo biết mà rollback title
       } finally {
         decrementPendingCount();
       }
