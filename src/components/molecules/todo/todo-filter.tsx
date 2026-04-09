@@ -16,7 +16,10 @@ const TodoFilterComponent = () => {
   ];
 
   return (
-    <div className="flex p-1 bg-white/5 border border-content/10 rounded-2xl gap-1">
+    <div
+      data-testid="todo-filter"
+      className="flex p-1 bg-white/5 border border-content/10 rounded-2xl gap-1"
+    >
       {FILTERS.map((f) => {
         const active = currentFilter === f.id;
         return (

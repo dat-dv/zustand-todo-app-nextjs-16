@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CodeBlock } from './code-block';
 
-vi.mock('shiki', () => ({
-  codeToHtml: vi.fn().mockResolvedValue('<pre class="shiki"><code>const test = true;</code></pre>'),
-}));
-
 describe('CodeBlock Component', () => {
   it('should render highlighted code when shiki succeeds', async () => {
     const { container } = render(await CodeBlock({ code: 'const x = 1;', lang: 'ts' }));

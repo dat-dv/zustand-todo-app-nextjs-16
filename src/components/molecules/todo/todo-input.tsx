@@ -14,7 +14,7 @@ export const TodoInput = memo(() => {
   const { methods, onSubmit } = UseCreateTodo();
 
   return (
-    <AppForm className="flex gap-2" methods={methods} onSubmit={onSubmit}>
+    <AppForm data-testid="todo-input" className="flex gap-2" methods={methods} onSubmit={onSubmit}>
       <FormInput name="title" placeholder="Add a new task..." className="flex-1" maxCount={100} />
       <ButtonSubmitNewTodo />
     </AppForm>

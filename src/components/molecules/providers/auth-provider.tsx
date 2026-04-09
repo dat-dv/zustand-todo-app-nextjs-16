@@ -7,6 +7,7 @@ import Loading from '@/components/atoms/loading';
 import { AuthRepository } from '@/domain/auth/infrastructure/auth.repository';
 import { FetchMeUseCase } from '@/domain/auth/use-cases/fetch-me.use-case';
 import { createUserStore } from '@/store/user-store';
+import { IAuthStoreState } from '@/store/user-store/user-store.type';
 import { safe } from '@/utils/promise';
 import { appRequest } from '@/utils/request/request';
 
@@ -15,10 +16,17 @@ export const AuthContext = createContext<UserStore | null>(null);
 
 export interface AuthProviderProps {
   children: ReactNode;
+  initState?: Partial<IAuthStoreState>;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [store] = useState(() => createUserStore());
+export const AuthProvider = ({ children, initState }: AuthProviderProps) => {
+  const [store] = useState(() =>
+    createUserStore({
+      ...initState,
+      // If we provide initState, we assume it's "hydrated" for testing
+      _hasHydrated: initState ? true : false,
+    }),
+  );
   const hasHydrated = useStore(store, (s) => s._hasHydrated);
 
   useEffect(() => {

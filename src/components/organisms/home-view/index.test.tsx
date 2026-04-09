@@ -1,25 +1,31 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { HomeView } from './index';
+import { useAuthStore } from '@/hooks/auth/use-auth-store';
 
-// Mock sub-components
-vi.mock('./home-view-private', () => ({
-  HomepagePrivate: () => <div data-testid="private-home">Private Home</div>,
-}));
-
-vi.mock('./home-view-public', () => ({
-  __esModule: true,
-  default: () => <div data-testid="public-home">Public Home</div>,
-}));
-
-// Mock useAuthStore
 vi.mock('@/hooks/auth/use-auth-store', () => ({
   useAuthStore: vi.fn(),
 }));
 
-import { useAuthStore } from '@/hooks/auth/use-auth-store';
 import { IAuthStore } from '@/store/user-store/user-store.type';
+
+import { HomeView } from './index';
+
+vi.mock('@/hooks/config/use-config', () => ({
+  useConfig: vi.fn().mockReturnValue({
+    config: { siteName: 'Zustand Todo', siteDescription: 'Premium Todo App' },
+  }),
+}));
+
+vi.mock('@/hooks/config/use-config-store', () => ({
+  useAppConfig: vi.fn((selector) =>
+    selector({
+      theme: 'light',
+      isDarkMode: false,
+      config: { siteName: 'Zustand Todo', siteDescription: 'Premium Todo App' },
+    }),
+  ),
+}));
 
 describe('HomeView Organism', () => {
   const mockAuthStore: IAuthStore = {

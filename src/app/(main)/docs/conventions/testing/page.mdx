@@ -13,7 +13,7 @@ Nhờ Dependency Injection, chúng ta dễ dàng thay Repository thật bằng M
 it('nên báo lỗi khi title trống', async () => {
   // Gỉa lập Repository
   const mockRepo = { create: vi.fn() };
-  const useCase = new CreateTodoUseCase(mockRepo as any);
+  const useCase = new CreateTodoUseCase(mockRepo);
 
   // Thực thi & kỳ vọng lỗi
   await expect(useCase.execute({ title: '' })).rejects.toThrow('Cần nhập tiêu đề');

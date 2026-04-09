@@ -5,7 +5,7 @@ import { useTodoStats } from '@/hooks/todo/use-todo-stats';
 const TodoStats = () => {
   const { totalTasks, completedTasks } = useTodoStats();
   return (
-    <div className="flex items-center gap-4">
+    <div data-testid="todo-stats" className="flex items-center gap-4">
       <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner shadow-primary/10">
         <ListTodo className="w-8 h-8" />
       </div>

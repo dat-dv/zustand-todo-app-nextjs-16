@@ -5,7 +5,10 @@ import { APP_ROUTES } from '@/constants/routes';
 
 export const HomepagePrivate = () => {
   return (
-    <div className="flex flex-col pt-20 items-center px-6 min-h-[calc(100vh-80px)]">
+    <div
+      data-testid="private-home"
+      className="flex flex-col pt-20 items-center px-6 min-h-[calc(100vh-80px)]"
+    >
       <AnimationContainer className="max-w-xl w-full flex flex-col gap-10 text-center items-center">
         <AnimationItem className="space-y-4">
           <h1 className="text-5xl sm:text-6xl font-black tracking-tight leading-tight">

@@ -4,7 +4,7 @@ import React from 'react';
 
 export const TodoSkeleton = () => {
   return (
-    <div className="space-y-4 animate-in fade-in duration-500">
+    <div data-testid="todo-skeleton" className="space-y-4 animate-in fade-in duration-500">
       {[1, 2, 3, 4, 5].map((i) => (
         <div
           key={i}
@@ -12,7 +12,7 @@ export const TodoSkeleton = () => {
         >
           {/* Checkbox Placeholder */}
           <div className="h-10 w-10 rounded-full bg-content/[0.06] animate-pulse shrink-0" />
-          
+
           {/* Content Placeholder */}
           <div className="flex-1 min-w-0 space-y-2">
             <div className="h-5 w-1/2 bg-content/[0.06] rounded-lg animate-pulse" />

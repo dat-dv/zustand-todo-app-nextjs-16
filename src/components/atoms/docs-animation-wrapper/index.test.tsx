@@ -1,23 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { DocsAnimationWrapper } from './index';
-
-vi.mock('framer-motion', async () => {
-  const actual = await vi.importActual('framer-motion');
-  return {
-    ...actual,
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    motion: {
-      div: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-        <div className={className} data-testid="motion-div">
-          {children}
-        </div>
-      ),
-    },
-  };
-});
 
 describe('DocsAnimationWrapper Component', () => {
   it('should render children correctly', () => {

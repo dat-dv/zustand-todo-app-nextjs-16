@@ -15,7 +15,7 @@ export const ProfileForm = () => {
   const isDisabled = loading || !isEditing;
 
   return (
-    <AppForm methods={methods} onSubmit={handleSave}>
+    <AppForm data-testid="profile-form" methods={methods} onSubmit={handleSave}>
       <div className="space-y-12">
         <AnimationItem className="flex flex-col items-center text-center gap-6">
           <FormAvatarInput

@@ -26,7 +26,7 @@ export default defineConfig({
       enabled: false, // enable if want to run browser test view on browser
     },
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
-    setupFiles: 'vitest.setup.ts',
+    setupFiles: 'vitest.setup.tsx',
     server: {
       deps: {
         inline: [/@testing-library\/jest-dom/],

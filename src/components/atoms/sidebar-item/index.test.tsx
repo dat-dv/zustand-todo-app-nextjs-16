@@ -1,16 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { usePathname } from 'next/navigation';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DocItem } from '@/utils/docs';
 
 import { SidebarItem } from './index';
-
-let mockPathname = '/docs/current';
-
-vi.mock('next/navigation', () => ({
-  usePathname: () => mockPathname,
-}));
 
 describe('SidebarItem Component', () => {
   const mockLinkItem: DocItem = {
@@ -27,13 +22,13 @@ describe('SidebarItem Component', () => {
   };
 
   it('should format document title correctly and render', () => {
-    mockPathname = '/docs/something-else';
+    vi.mocked(usePathname).mockReturnValue('/docs/something-else');
     render(<SidebarItem item={mockLinkItem} />);
     expect(screen.getByText('My Document')).toBeInTheDocument();
   });
 
   it('should toggle folder content on click', () => {
-    mockPathname = '/docs/unrelated';
+    vi.mocked(usePathname).mockReturnValue('/docs/unrelated');
     render(<SidebarItem item={mockFolderItem} />);
 
     // Not active, so children are initially hidden

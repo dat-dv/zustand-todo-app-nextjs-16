@@ -23,7 +23,7 @@ const TodoList = ({ items }: { items: Partial<ITodo>[] }) => {
   const hasTodo = items.length > 0;
 
   return (
-    <div>
+    <div data-testid="todo-list">
       {hasTodo ? (
         <WindowVirtualizer>
           {items.map((todo) => (

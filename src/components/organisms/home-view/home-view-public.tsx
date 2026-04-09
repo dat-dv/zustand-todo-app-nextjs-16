@@ -7,6 +7,7 @@ import { APP_ROUTES } from '@/constants/routes';
 const HomepagePublic = () => {
   return (
     <AppContainer
+      data-testid="public-home"
       size="sm"
       className="flex flex-col pt-20 items-center text-center min-h-[calc(100vh-80px)] px-0 sm:px-0 lg:px-0"
     >

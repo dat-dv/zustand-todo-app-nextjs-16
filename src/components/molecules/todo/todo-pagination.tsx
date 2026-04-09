@@ -7,5 +7,9 @@ export const TodoPagination = ({ totalItems }: { totalItems: number }) => {
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  return <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />;
+  return (
+    <div data-testid="todo-pagination">
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
+    </div>
+  );
 };

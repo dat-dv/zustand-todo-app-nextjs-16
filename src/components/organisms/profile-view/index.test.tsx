@@ -1,21 +1,29 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import { AuthProvider } from '@/components/molecules/providers/auth-provider';
 
 import { ProfileView } from './index';
 
-// Mock sub-components
-vi.mock('../../molecules/profile-form', () => ({
-  ProfileForm: () => <div data-testid="profile-form">Profile Form</div>,
-}));
-
-// Mock atoms that might uses framer motion or other hooks
-vi.mock('@/components/atoms/animate', () => ({
-  AnimationContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
 describe('ProfileView Organism', () => {
-  it('should render ProfileForm within containers', () => {
-    render(<ProfileView />);
+  it('should render ProfileForm with user data', () => {
+    render(
+      <AuthProvider
+        initState={{
+          user: {
+            id: '1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            avatarUrl: '',
+          },
+        }}
+      >
+        <ProfileView />
+      </AuthProvider>,
+    );
+
     expect(screen.getByTestId('profile-form')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
   });
 });
