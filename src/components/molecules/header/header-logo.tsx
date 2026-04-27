@@ -9,9 +9,9 @@ const HeaderLogo = () => {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold transition-all">
           S
         </div>
-        <span className="text-xl font-bold tracking-tight text-content select-none">
+        <span className="text-lg md:text-xl font-bold tracking-tight text-content select-none">
           Task
-          <span className="text-primary transition-all">.manager</span>
+          <span className="hidden sm:inline text-primary transition-all">.manager</span>
         </span>
       </div>
     </Link>
