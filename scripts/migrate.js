@@ -1,6 +1,6 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { createClient } from '@libsql/client';
+import { drizzle } from 'drizzle-orm/libsql';
+import { migrate } from 'drizzle-orm/libsql/migrator';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,24 +8,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || './data/sqlite.db';
+const TURSO_CONNECTION_URL = process.env.TURSO_CONNECTION_URL || `file:${process.env.SQLITE_DB_PATH || './data/sqlite.db'}`;
+const TURSO_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
 const MIGRATIONS_FOLDER = path.join(__dirname, '../drizzle');
 
-/**
- * Migration execution environment
- */
 const main = async () => {
-  // Create directory if not exists
-  const dbDir = path.dirname(SQLITE_DB_PATH);
-  if (dbDir !== '.' && !fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
+  console.log('>>> LibSQL Migration Protocol Initialized...');
+  console.log(`>>> Target URL: ${TURSO_CONNECTION_URL}`);
 
-  const sqlite = new Database(SQLITE_DB_PATH);
-  const db = drizzle(sqlite);
+  const client = createClient({
+    url: TURSO_CONNECTION_URL,
+    authToken: TURSO_AUTH_TOKEN,
+  });
 
-  console.log('>>> Standard Migration Protocol Initialized...');
-  console.log(`>>> Target DB: ${SQLITE_DB_PATH}`);
+  const db = drizzle(client);
 
   try {
     if (!fs.existsSync(MIGRATIONS_FOLDER)) {
@@ -43,3 +39,4 @@ const main = async () => {
 };
 
 main();
+
