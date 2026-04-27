@@ -6,6 +6,8 @@ export const serverEnvSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
 
   SQLITE_DB_PATH: z.string().min(1).default('./data/sqlite.db'),
+  TURSO_CONNECTION_URL: z.string().optional(),
+  TURSO_AUTH_TOKEN: z.string().optional(),
 
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
@@ -19,6 +21,8 @@ export const serverEnvSchema = z.object({
 const parsed = serverEnvSchema.safeParse({
   JWT_SECRET: process.env.JWT_SECRET,
   SQLITE_DB_PATH: process.env.SQLITE_DB_PATH,
+  TURSO_CONNECTION_URL: process.env.TURSO_CONNECTION_URL,
+  TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN,
   NODE_ENV: process.env.NODE_ENV,
   IS_DEBUG: process.env.IS_DEBUG,
 });
